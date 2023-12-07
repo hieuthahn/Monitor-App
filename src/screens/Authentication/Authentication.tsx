@@ -1,50 +1,60 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
 import {Alert, Button, Text, TextInput, View} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import {privateAxios} from '../../lib/axios';
 import {PASSWORD, USER_NAME} from 'react-native-dotenv';
+import {initDatabase} from '../../lib/db';
+import {useNavigation} from '@react-navigation/native';
+import {useStorage} from '../../hook/use-storage';
 
-const AuthenticationScreen = () => {
+const Authentication = () => {
   const [auth, setAuth] = useState<{
     crime_id: string;
     device_man: string;
   }>({
-    crime_id: '',
-    device_man: '',
+    crime_id: '106',
+    device_man: 'sadmin' || 'client_test',
   });
-  const [token, setToken] = useState('');
-  const [deviceId, setDeviceId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useStorage('token');
+  const [deviceId, setDeviceId] = useStorage('deviceId');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigation = useNavigation();
+
+  const initSQLite = async () => {
+    try {
+      await initDatabase();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    initSQLite();
+  }, []);
 
   const handleSubmit = async () => {
     try {
+      setIsLoading(true);
       const body = {
         ...auth,
         device_name: await DeviceInfo.getDeviceName(),
-        device_imei: await DeviceInfo.getDeviceId(),
+        device_imei: await DeviceInfo.getUniqueId(),
       };
-      console.log(body);
-      // const res = await privateAxios.post('/wp-json/cyno/v1/add_device', body, {
-      //   headers: {
-      //     Authorization: 'Bearer ' + token,
-      //   },
-      // });
-      // if (res?.data?.device_id) {
-      //   SecureStore.setItemAsync(
-      //     'device_id',
-      //     JSON.stringify(res.data.device_id),
-      //   );
-      //   setDeviceId(res?.data?.device_id);
-      // }
-    } catch (error) {
-      console.error(
+      const res = await privateAxios.post('/wp-json/cyno/v1/add_device', body);
+      if (res?.data?.device_id) {
+        setDeviceId(res?.data?.device_id);
+        navigation.navigate('Permission' as never);
+      }
+    } catch (error: any) {
+      console.log(
         'Add device error: ',
-        error.response?.data?.message || error?.message,
+        error.response?.data?.message || error?.message || error,
       );
-      Alert.alert(
-        'Add device error: ' + error.response?.data?.message || error?.message,
-      );
+      Alert.alert('Error: ' + error.response?.data?.message || error?.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -55,7 +65,6 @@ const AuthenticationScreen = () => {
           username: USER_NAME,
           password: PASSWORD,
         });
-        console.log(resAxios);
         if (resAxios.data.token) {
           privateAxios.defaults.headers.common.Authorization =
             'Bearer ' + resAxios.data.token;
@@ -63,7 +72,13 @@ const AuthenticationScreen = () => {
         }
       })();
     }
-  }, [token]);
+  }, [setToken, token]);
+
+  useEffect(() => {
+    if (deviceId) {
+      navigation.navigate('Permission' as never);
+    }
+  }, [deviceId]);
 
   return (
     <View
@@ -100,9 +115,9 @@ const AuthenticationScreen = () => {
         autoCapitalize="none"
         placeholder="Device man"
       />
-      <Button onPress={handleSubmit} title="Submit" />
+      <Button disabled={isLoading} onPress={handleSubmit} title="Submit" />
     </View>
   );
 };
 
-export default AuthenticationScreen;
+export default Authentication;
