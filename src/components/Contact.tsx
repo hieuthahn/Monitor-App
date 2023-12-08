@@ -4,7 +4,12 @@ import {PermissionsAndroid} from 'react-native';
 import Contacts from 'react-native-contacts';
 import {useStorage} from '../hook/use-storage';
 import {showAlert} from '../lib/ui-alert';
-import {getDBConnection, getTableItems, tablesName} from '../lib/db';
+import {
+  getDBConnection,
+  getTableItems,
+  saveTableItems,
+  tablesName,
+} from '../lib/db';
 import _ from 'lodash';
 import {privateAxios} from '../lib/axios';
 
@@ -54,6 +59,13 @@ const Contact = () => {
             device_id: deviceId,
             data: formattedContacts,
           });
+          if (res.data.number) {
+            const mapData = contacts.map((data: any) => ({
+              id: data.id,
+              content: JSON.stringify(data),
+            }));
+            await saveTableItems(db, tablesName.Contact, mapData);
+          }
           console.log('Res Contacts => ', res.data);
         }
       } catch (error: any) {

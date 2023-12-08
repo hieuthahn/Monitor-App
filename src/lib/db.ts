@@ -48,12 +48,10 @@ export const getTableItems = async (
 export const saveTableItems = async (
   db: SQLiteDatabase,
   tableName: string,
-  items: [
-    {
-      id: string | number;
-      content: unknown;
-    },
-  ],
+  items: {
+    id: any;
+    content: any;
+  }[],
 ) => {
   const insertQuery =
     `INSERT OR REPLACE INTO ${tableName}(id, content) VALUES` +
@@ -64,7 +62,7 @@ export const saveTableItems = async (
 export const deleteTableItem = async (
   db: SQLiteDatabase,
   tableName: string,
-  id: string | number,
+  id: any,
 ) => {
   const deleteQuery = `DELETE from ${tableName} where id = ${id}`;
   await db.executeSql(deleteQuery);
