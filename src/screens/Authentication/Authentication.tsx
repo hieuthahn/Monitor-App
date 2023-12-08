@@ -4,10 +4,10 @@ import React, {useEffect, useState} from 'react';
 import {Alert, Button, Text, TextInput, View} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import {privateAxios} from '../../lib/axios';
-import {PASSWORD, USER_NAME} from 'react-native-dotenv';
 import {initDatabase} from '../../lib/db';
 import {useNavigation} from '@react-navigation/native';
 import {useStorage} from '../../hook/use-storage';
+import {getToken} from '../../lib/helper';
 
 const Authentication = () => {
   const [auth, setAuth] = useState<{
@@ -29,6 +29,20 @@ const Authentication = () => {
       console.log(error);
     }
   };
+
+  const initToken = async () => {
+    const token = await getToken();
+    if (token) {
+      privateAxios.defaults.headers.common.Authorization = 'Bearer ' + token;
+      setToken(token);
+    }
+  };
+
+  useEffect(() => {
+    if (!token) {
+      initToken();
+    }
+  }, [token]);
 
   useEffect(() => {
     initSQLite();
@@ -57,22 +71,6 @@ const Authentication = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!token) {
-      (async () => {
-        const resAxios = await privateAxios.post('/wp-json/jwt-auth/v1/token', {
-          username: USER_NAME,
-          password: PASSWORD,
-        });
-        if (resAxios.data.token) {
-          privateAxios.defaults.headers.common.Authorization =
-            'Bearer ' + resAxios.data.token;
-          setToken(resAxios.data.token);
-        }
-      })();
-    }
-  }, [setToken, token]);
 
   useEffect(() => {
     if (deviceId) {

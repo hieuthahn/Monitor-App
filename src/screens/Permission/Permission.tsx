@@ -5,6 +5,7 @@ import {Button, Text, View} from 'react-native';
 import CallLog from '../../components/CallLog';
 import {useStorage} from '../../hook/use-storage';
 import {useNavigation} from '@react-navigation/native';
+import Contact from '../../components/Contact';
 
 const Permission = () => {
   const [deviceId, setDeviceId] = useStorage('deviceId');
@@ -29,6 +30,7 @@ const Permission = () => {
         }}
       />
       <CallLog />
+      <Contact />
     </View>
   );
 };

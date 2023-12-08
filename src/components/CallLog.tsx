@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect} from 'react';
 import {Linking, PermissionsAndroid, Text, View} from 'react-native';
 // @ts-ignore
@@ -7,7 +8,6 @@ import {showAlert} from '../lib/ui-alert';
 import {convertFromTimestamp} from '../lib/helper';
 import {useStorage} from '../hook/use-storage';
 import {
-  deleteTable,
   getDBConnection,
   getTableItems,
   saveTableItems,
