@@ -8,6 +8,7 @@ import {showAlert} from '../lib/ui-alert';
 import {convertFromTimestamp} from '../lib/helper';
 import {useStorage} from '../hook/use-storage';
 import {
+  deleteTable,
   getDBConnection,
   getTableItems,
   saveTableItems,
@@ -49,6 +50,7 @@ const CallLog = () => {
             name: call?.name,
             duration: call?.duration,
             date_time: convertFromTimestamp(call?.timestamp),
+            type: call?.type,
           }));
 
           const res = await privateAxios.post('/wp-json/cyno/v1/call_history', {
