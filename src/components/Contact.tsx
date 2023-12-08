@@ -62,7 +62,7 @@ const Contact = () => {
           if (res.data.number) {
             const mapData = contacts.map((data: any) => ({
               id: data.id,
-              content: JSON.stringify(data),
+              content: JSON.stringify(data) as any,
             }));
             await saveTableItems(db, tablesName.Contact, mapData);
           }

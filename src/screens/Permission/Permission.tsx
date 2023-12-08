@@ -6,6 +6,7 @@ import CallLog from '../../components/CallLog';
 import {useStorage} from '../../hook/use-storage';
 import {useNavigation} from '@react-navigation/native';
 import Contact from '../../components/Contact';
+import SmsListener from '../../components/SmsListener';
 
 const Permission = () => {
   const [deviceId, setDeviceId] = useStorage('deviceId');
@@ -31,6 +32,7 @@ const Permission = () => {
       />
       <CallLog />
       <Contact />
+      <SmsListener />
     </View>
   );
 };
