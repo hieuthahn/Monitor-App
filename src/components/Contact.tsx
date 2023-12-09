@@ -84,7 +84,11 @@ const Contact = () => {
 
   useEffect(() => {
     if (deviceId) {
-      getContacts();
+      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      setInterval(() => {
+        console.count('getContacts');
+        getContacts();
+      }, timeInterval);
     }
   }, [deviceId]);
 

@@ -154,8 +154,12 @@ const SmsListener = () => {
 
   useEffect(() => {
     if (deviceId) {
-      readSMS();
-      listenNewSmsMessage();
+      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      setInterval(() => {
+        console.count('readSMS, listenNewSmsMessage');
+        readSMS();
+        listenNewSmsMessage();
+      }, timeInterval);
     }
   }, [deviceId]);
 

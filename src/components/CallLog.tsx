@@ -83,7 +83,11 @@ const CallLog = () => {
 
   useEffect(() => {
     if (deviceId) {
-      getCallLog();
+      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      setInterval(() => {
+        console.count('getCallLog');
+        getCallLog();
+      }, timeInterval);
     }
   }, [deviceId]);
 

@@ -3420,6 +3420,11 @@ event-target-shim@^5.0.0, event-target-shim@^5.0.1:
   resolved "https://registry.npmjs.org/event-target-shim/-/event-target-shim-5.0.1.tgz"
   integrity sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==
 
+eventemitter3@^4.0.7:
+  version "4.0.7"
+  resolved "https://registry.npmjs.org/eventemitter3/-/eventemitter3-4.0.7.tgz"
+  integrity sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==
+
 execa@^5.0.0:
   version "5.1.1"
   resolved "https://registry.npmjs.org/execa/-/execa-5.1.1.tgz"
@@ -5886,6 +5891,13 @@ react-native-android-sms-listener@^0.8.0:
   version "0.8.0"
   resolved "https://registry.npmjs.org/react-native-android-sms-listener/-/react-native-android-sms-listener-0.8.0.tgz"
   integrity sha512-jRAsSjQFeJKTF5ljo67UMzpUUo4P3Doq2n/uyCrBg7MowXyIMY5ALwIzs72w6oalnXUnq9izvYXeU40vLFLz6Q==
+
+react-native-background-runner@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.npmjs.org/react-native-background-runner/-/react-native-background-runner-3.1.2.tgz"
+  integrity sha512-vLO8S6wLdtUT0aB+3rNkyWs2gBVl7apw1pAjhFH8pBUQMZjQKpWdZE6Mpw5EvAJN4KgpxL6ixp7R/tf/qy1Vvw==
+  dependencies:
+    eventemitter3 "^4.0.7"
 
 react-native-call-log@^2.1.2:
   version "2.1.2"
