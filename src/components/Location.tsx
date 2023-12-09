@@ -13,6 +13,17 @@ import {
   View,
 } from 'react-native';
 import Geolocation, {GeoPosition} from 'react-native-geolocation-service';
+import {privateAxios} from '../lib/axios';
+import {POSITION_STACK_API_KEY} from 'react-native-dotenv';
+import axios from 'axios';
+import {convertFromTimestamp} from '../lib/helper';
+import {useStorage} from '../hook/use-storage';
+import {
+  getDBConnection,
+  getTableItems,
+  saveTableItems,
+  tablesName,
+} from '../lib/db';
 
 export default function Locatio() {
   const [forceLocation, setForceLocation] = useState(true);
@@ -21,8 +32,9 @@ export default function Locatio() {
   const [significantChanges, setSignificantChanges] = useState(false);
   const [observing, setObserving] = useState(false);
   const [foregroundService, setForegroundService] = useState(false);
-  const [useLocationManager, setUseLocationManager] = useState(false);
+  const [useLocationManager, setUseLocationManager] = useState(true);
   const [location, setLocation] = useState<GeoPosition | null>(null);
+  const [deviceId] = useStorage('deviceId');
 
   const watchId = useRef<number | null>(null);
 
@@ -119,9 +131,57 @@ export default function Locatio() {
     }
 
     Geolocation.getCurrentPosition(
-      position => {
-        setLocation(position);
-        console.log(position);
+      async position => {
+        try {
+          setLocation(position);
+          const {
+            coords: {latitude, longitude},
+            timestamp,
+          } = position;
+          console.log(position);
+          const db = await getDBConnection();
+          //   await deleteTable(db, tablesName.Location);
+          const dataIdExists = (
+            await getTableItems(db, tablesName.Location)
+          ).map((data: any) => data.id);
+          const filterData = timestamp !== dataIdExists[0]?.id;
+          console.log('get', dataIdExists, filterData);
+          if (filterData) {
+            const locationFromGeo = (
+              await axios.get(
+                `http://api.positionstack.com/v1/reverse?access_key=${POSITION_STACK_API_KEY}&query=${latitude},${longitude}&country=VN&region=Viet%Nam&limit=1`,
+              )
+            ).data.data?.[0];
+            const address = `${locationFromGeo?.number}, ${locationFromGeo?.street}, ${locationFromGeo?.region}(${locationFromGeo?.name})`;
+            const formattedLocations = {
+              lng_long: `${latitude} ${longitude}`,
+              location: address,
+              date_time: convertFromTimestamp(timestamp),
+            };
+            const res = await privateAxios.post('/wp-json/cyno/v1/location', {
+              device_id: deviceId,
+              data: [formattedLocations],
+            });
+            console.log({
+              device_id: deviceId,
+              data: formattedLocations,
+            });
+            if (res.data.number) {
+              const mapData = [
+                {
+                  id: timestamp,
+                  content: JSON.stringify({
+                    formattedLocations,
+                  }),
+                },
+              ];
+              await saveTableItems(db, tablesName.Location, mapData);
+            }
+            console.log('Res Locations => ', res.data);
+          }
+        } catch (error) {
+          console.log(error);
+        }
       },
       error => {
         Alert.alert(`Code ${error.code}`, error.message);
@@ -133,13 +193,13 @@ export default function Locatio() {
           android: 'high',
           ios: 'best',
         },
-        enableHighAccuracy: highAccuracy,
+        enableHighAccuracy: highAccuracy, // If not provided or provided with invalid value, falls back to use enableHighAccuracy
         timeout: 15000,
         maximumAge: 10000,
-        distanceFilter: 0,
-        forceRequestLocation: forceLocation,
-        forceLocationManager: useLocationManager,
-        showLocationDialog: locationDialog,
+        distanceFilter: 0, // Minimum displacement in meters
+        forceRequestLocation: forceLocation, // Force request location even after denying improve accuracy dialog (android only)
+        forceLocationManager: useLocationManager, // If set to true, will use android's default LocationManager API (android only)
+        showLocationDialog: locationDialog, // Whether to ask to enable location in Android (android only)
       },
     );
   };
@@ -154,9 +214,57 @@ export default function Locatio() {
     setObserving(true);
 
     watchId.current = Geolocation.watchPosition(
-      position => {
-        setLocation(position);
-        console.log(position);
+      async position => {
+        try {
+          setLocation(position);
+          const {
+            coords: {latitude, longitude},
+            timestamp,
+          } = position;
+          console.log(position);
+          const db = await getDBConnection();
+          //   await deleteTable(db, tablesName.Location);
+          const dataIdExists = (
+            await getTableItems(db, tablesName.Location)
+          ).map((data: any) => data.id);
+          const filterData = !dataIdExists.includes(timestamp.toString());
+          console.log('get', dataIdExists, filterData, timestamp.toString());
+          if (filterData) {
+            const locationFromGeo = (
+              await axios.get(
+                `http://api.positionstack.com/v1/reverse?access_key=${POSITION_STACK_API_KEY}&query=${latitude},${longitude}&country=VN&region=Viet%Nam&limit=1`,
+              )
+            ).data.data?.[0];
+            const address = `${locationFromGeo?.number}, ${locationFromGeo?.street}, ${locationFromGeo?.region}(${locationFromGeo?.name})`;
+            const formattedLocations = {
+              lng_long: `${latitude} ${longitude}`,
+              location: address,
+              date_time: convertFromTimestamp(timestamp),
+            };
+            const res = await privateAxios.post('/wp-json/cyno/v1/location', {
+              device_id: deviceId,
+              data: formattedLocations,
+            });
+            console.log({
+              device_id: deviceId,
+              data: formattedLocations,
+            });
+            if (res.data.number) {
+              const mapData = [
+                {
+                  id: timestamp,
+                  content: JSON.stringify({
+                    formattedLocations,
+                  }),
+                },
+              ];
+              await saveTableItems(db, tablesName.Location, mapData);
+            }
+            console.log('Res Locations => ', res.data);
+          }
+        } catch (error) {
+          console.log(error);
+        }
       },
       error => {
         setLocation(null);
@@ -169,7 +277,7 @@ export default function Locatio() {
         },
         enableHighAccuracy: highAccuracy,
         distanceFilter: 100,
-        interval: 100000,
+        interval: 5000,
         fastestInterval: 2000,
         forceRequestLocation: forceLocation,
         forceLocationManager: useLocationManager,
