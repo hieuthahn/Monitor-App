@@ -2,6 +2,7 @@ import {format} from 'date-fns';
 import {PASSWORD, USER_NAME} from 'react-native-dotenv';
 import {privateAxios} from './axios';
 import Service from 'react-native-background-runner';
+import {Platform} from 'react-native';
 
 export const convertFromTimestamp = (timestamp: number | string) => {
   if (timestamp) {
@@ -51,3 +52,6 @@ export const activeRunBackground = async () => {
     console.log('Successful start run background!');
   }
 };
+
+export const isAndroid = Platform.OS === 'android';
+export const isIOS = Platform.OS === 'ios';

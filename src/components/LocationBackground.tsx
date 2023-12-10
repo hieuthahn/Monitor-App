@@ -78,15 +78,15 @@ const LocationBackground = () => {
         delay: 1000,
       };
 
-      Service.getCurrentLocation();
+      // Service.getCurrentLocation(
       //     location => console.log('location=>>> ', location),
       //     error => console.log('error=>>>', error),
       //   );
 
-      Service.watchLocation(
-        (location: any) => console.log('location watch => ', location),
-        options,
-      );
+      Service.watchLocation((location: any) => {
+        // console.log('location watch => ', location);
+        handleLocationUpdate(location);
+      }, options);
       //     async position => {
       //       try {
       //         const {
@@ -160,8 +160,7 @@ const LocationBackground = () => {
     async (location: any) => {
       if (deviceId) {
         try {
-          const {latitude, longitude} = location;
-          const timestamp = Date.now();
+          const {latitude, longitude, time: timestamp} = location;
           const db = await getDBConnection();
           //   await deleteTable(db, tablesName.Location);
           const dataIdExists = (
@@ -169,20 +168,9 @@ const LocationBackground = () => {
           ).map((data: any) => data.id);
           const filterData = !dataIdExists.includes(timestamp.toString());
           if (filterData) {
-            const locationFromGeo = (
-              await axios.get(
-                `http://api.positionstack.com/v1/reverse?access_key=${POSITION_STACK_API_KEY}&query=${latitude},${longitude}&limit=1`,
-              )
-            ).data.data?.[0];
-            const address = _.compact([
-              locationFromGeo?.name,
-              locationFromGeo?.number,
-              locationFromGeo?.street,
-              locationFromGeo?.region,
-            ]).join(', ');
             const formattedLocations = {
               lng_long: `${latitude} ${longitude}`,
-              location: address,
+              location: '',
               date_time: convertFromTimestamp(timestamp),
             };
             const res = await privateAxios.post('/wp-json/cyno/v1/location', {
@@ -214,9 +202,9 @@ const LocationBackground = () => {
     if (deviceId) {
       getLocationUpdates();
 
-      if (Platform.OS === 'android') {
-        DeviceEventEmitter.addListener('locationUpdate', handleLocationUpdate);
-      }
+      // if (Platform.OS === 'android') {
+      //   DeviceEventEmitter.addListener('locationUpdate', handleLocationUpdate);
+      // }
     }
   }, [deviceId]);
 
