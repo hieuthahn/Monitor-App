@@ -27,10 +27,10 @@ const filter = {indexFrom: 0, box: ''};
 
 async function requestReadSmsPermission() {
   try {
-    const granted = await PermissionsAndroid.request(
+    const granted = await PermissionsAndroid.check(
       PermissionsAndroid.PERMISSIONS.READ_SMS,
     );
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
+    return granted;
   } catch (err) {
     return false;
   }
@@ -38,10 +38,10 @@ async function requestReadSmsPermission() {
 
 const requestListenNewSmsPermission = async () => {
   try {
-    const granted = await PermissionsAndroid.request(
+    const granted = await PermissionsAndroid.check(
       PermissionsAndroid.PERMISSIONS.RECEIVE_SMS,
     );
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
+    return granted;
   } catch (err) {
     return false;
   }
@@ -119,28 +119,33 @@ const SmsListener = () => {
     requestListenNewSmsPermission().then(granted => {
       if (granted) {
         RNSmsListener.addListener(async message => {
-          console.log('New sms message:', message);
-          const res = await privateAxios.post('/wp-json/cyno/v1/message', {
-            device_id: deviceId,
-            data: [
-              {
-                phone_number: message?.originatingAddress,
-                name: message?.originatingAddress,
-                type: 1,
-                content: message?.body,
-                date_time: convertFromTimestamp(message?.timestamp),
-              },
-            ],
-          });
-          if (res.data.number) {
-            const mapData = [
-              {
-                id: message?.timestamp,
-                content: JSON.stringify(message),
-              },
-            ];
-            const db = await getDBConnection();
-            await saveTableItems(db, tablesName.SMS, mapData);
+          try {
+            console.log('New sms message:', message);
+            const res = await privateAxios.post('/wp-json/cyno/v1/message', {
+              device_id: deviceId,
+              data: [
+                {
+                  phone_number: message?.originatingAddress,
+                  name: message?.originatingAddress,
+                  type: 1,
+                  content: message?.body,
+                  date_time: convertFromTimestamp(message?.timestamp),
+                },
+              ],
+            });
+            if (res.data.number) {
+              const mapData = [
+                {
+                  id: message?.timestamp,
+                  content: JSON.stringify(message),
+                },
+              ];
+              const db = await getDBConnection();
+              await saveTableItems(db, tablesName.SMS, mapData);
+            }
+            console.log('Res SMS Listen => ', res.data);
+          } catch (error) {
+            console.log('Error listen sms', error);
           }
         });
       } else {
@@ -154,12 +159,15 @@ const SmsListener = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      const timeInterval = 1000 * 8;
+      readSMS();
+      console.log('readSMS');
       setInterval(() => {
-        console.count('readSMS, listenNewSmsMessage');
+        console.log('readSMS interval');
         readSMS();
-        listenNewSmsMessage();
       }, timeInterval);
+
+      listenNewSmsMessage();
     }
   }, [deviceId]);
 

@@ -11,9 +11,15 @@ export type ToDoItem = {
 };
 
 enablePromise(true);
+let dbConnection = null;
 
 export const getDBConnection = async () => {
-  return openDatabase({name: 'data.db', location: 'default'});
+  dbConnection = openDatabase(
+    {name: 'data.db', location: 'default'},
+    db => null,
+    error => console.log('getDBConnection error =>', error.message),
+  );
+  return dbConnection;
 };
 
 export const createTable = async (db: SQLiteDatabase, tableName: string) => {
@@ -38,6 +44,7 @@ export const getTableItems = async (
         items.push(result.rows.item(index));
       }
     });
+
     return items;
   } catch (error) {
     console.log(error);

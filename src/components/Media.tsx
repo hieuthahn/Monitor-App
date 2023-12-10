@@ -49,21 +49,21 @@ const hasAndroidPermission = async () => {
   }
   const getRequestPermissionPromise = async () => {
     if (+Platform.Version >= 33) {
-      return PermissionsAndroid.requestMultiple([
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      ]).then(
-        statuses =>
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO] ===
-            PermissionsAndroid.RESULTS.GRANTED,
+      return (
+        (await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+        )) &&
+        (await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
+        )) &&
+        (await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        ))
       );
     } else {
-      return PermissionsAndroid.request(
+      return PermissionsAndroid.check(
         PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-      ).then(status => status === PermissionsAndroid.RESULTS.GRANTED);
+      );
     }
   };
 
@@ -96,35 +96,24 @@ const Media = () => {
       console.log('getPhotos => ', error);
     }
   };
-  useEffect(() => {
-    if (photos?.edges?.length > 0) {
-      if (
-        photos.page_info.has_next_page &&
-        photos.page_info.end_cursor &&
-        photos.page_info.end_cursor !== nextCursor
-      ) {
-        setNextCursor(photos.page_info.end_cursor);
-      }
-
-      sendPhotoToServer(photos.edges);
-    }
-  }, [photos.edges.length, photos.page_info.end_cursor]);
 
   const sendPhotoToServer = async (_photos: any) => {
     try {
-      const photos = _photos.map((photo: any) => photo.node);
+      const newPhotos = _photos.map((photo: any) => photo.node);
+
       const db = await getDBConnection();
       // await deleteTable(db, tablesName.Media);
       const dataIdExists = (await getTableItems(db, tablesName.Media)).map(
         (data: any) => data.id,
       );
-      const filterData = photos.filter(
+      const filterData = newPhotos.filter(
         (data: any) => !dataIdExists?.includes(data?.id?.toString()),
       );
+
       if (filterData?.length > 0) {
         const formData = new FormData();
         formData.append('device_id', deviceId);
-        photos?.forEach((photo: any) => {
+        newPhotos?.forEach((photo: any) => {
           formData.append('images[]', {
             uri: photo?.image?.uri,
             name: photo?.image?.filename,
@@ -141,14 +130,14 @@ const Media = () => {
             },
           },
         );
+        console.log('Res Media => ', res.data);
         if (res.data.number) {
-          const mapData = photos.map((data: any) => ({
+          const mapData = newPhotos.map((data: any) => ({
             id: data.id,
             content: JSON.stringify(data) as any,
           }));
           await saveTableItems(db, tablesName.Contact, mapData);
         }
-        console.log('Res Media => ', res.data);
       }
     } catch (error: any) {
       console.log(
@@ -158,9 +147,26 @@ const Media = () => {
     }
   };
 
+  if (photos?.edges?.length > 0) {
+    if (
+      photos.page_info.has_next_page &&
+      photos.page_info.end_cursor &&
+      photos.page_info.end_cursor !== nextCursor
+    ) {
+      setNextCursor(photos.page_info.end_cursor);
+    }
+    sendPhotoToServer(photos.edges);
+  }
+
   useEffect(() => {
     if (deviceId) {
+      const timeInterval = 1000 * 7;
       getMedia();
+      console.log('getMedia');
+      setInterval(() => {
+        console.log('getMedia interval');
+        getMedia();
+      }, timeInterval);
     }
   }, [deviceId, nextCursor]);
 

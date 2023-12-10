@@ -21,10 +21,10 @@ const CallLog = () => {
   const getCallLog = async () => {
     const requestAccessCallLogPermission = async () => {
       try {
-        const granted = await PermissionsAndroid.request(
+        const granted = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.READ_CALL_LOG,
         );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
+        return granted;
       } catch (error) {
         return false;
       }
@@ -83,9 +83,11 @@ const CallLog = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      const timeInterval = 1000 * 5;
+      getCallLog();
+      console.log('getCallLog');
       setInterval(() => {
-        console.count('getCallLog');
+        console.log('getCallLog interval');
         getCallLog();
       }, timeInterval);
     }

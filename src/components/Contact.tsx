@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect} from 'react';
 import {Linking, Text, View} from 'react-native';
 import {PermissionsAndroid} from 'react-native';
@@ -19,10 +20,10 @@ const Contact = () => {
   const getContacts = async () => {
     const requestAccessContactsPermission = async () => {
       try {
-        const granted = await PermissionsAndroid.request(
+        const granted = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
         );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
+        return granted;
       } catch (error) {
         return false;
       }
@@ -84,9 +85,11 @@ const Contact = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 60 * 60 * 24; // 1 day
+      const timeInterval = 1000 * 6;
+      getContacts();
+      console.log('getContacts');
       setInterval(() => {
-        console.count('getContacts');
+        console.log('getContacts interval');
         getContacts();
       }, timeInterval);
     }

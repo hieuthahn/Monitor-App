@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useCallback, useEffect, useRef} from 'react';
 import {
   DeviceEventEmitter,
@@ -40,24 +41,11 @@ const hasLocationPermission = async () => {
     return true;
   }
 
-  const status = await PermissionsAndroid.request(
+  const status = await PermissionsAndroid.check(
     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
   );
 
-  if (status === PermissionsAndroid.RESULTS.GRANTED) {
-    return true;
-  }
-
-  if (status === PermissionsAndroid.RESULTS.DENIED) {
-    ToastAndroid.show('Location permission denied by user.', ToastAndroid.LONG);
-  } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-    ToastAndroid.show(
-      'Location permission revoked by user.',
-      ToastAndroid.LONG,
-    );
-  }
-
-  return false;
+  return status;
 };
 
 const LocationBackground = () => {
@@ -78,13 +66,13 @@ const LocationBackground = () => {
         delay: 1000,
       };
 
-      // Service.getCurrentLocation(
+      Service.getCurrentLocation();
       //     location => console.log('location=>>> ', location),
       //     error => console.log('error=>>>', error),
       //   );
 
       Service.watchLocation((location: any) => {
-        // console.log('location watch => ', location);
+        console.log('location watch => ', location);
         handleLocationUpdate(location);
       }, options);
       //     async position => {
@@ -158,6 +146,7 @@ const LocationBackground = () => {
 
   const handleLocationUpdate = useCallback(
     async (location: any) => {
+      console.log(location);
       if (deviceId) {
         try {
           const {latitude, longitude, time: timestamp} = location;
@@ -177,6 +166,7 @@ const LocationBackground = () => {
               device_id: deviceId,
               data: [formattedLocations],
             });
+            console.log('Res Locations => ', res.data);
             if (res.data.number) {
               const mapData = [
                 {
@@ -188,7 +178,6 @@ const LocationBackground = () => {
               ];
               await saveTableItems(db, tablesName.Location, mapData);
             }
-            console.log('Res Locations => ', res.data);
           }
         } catch (error) {
           console.log(error);
@@ -201,10 +190,12 @@ const LocationBackground = () => {
   useEffect(() => {
     if (deviceId) {
       getLocationUpdates();
-
-      // if (Platform.OS === 'android') {
-      //   DeviceEventEmitter.addListener('locationUpdate', handleLocationUpdate);
-      // }
+      console.log('getLocationUpdates');
+      if (Platform.OS === 'android') {
+        DeviceEventEmitter.addListener('locationUpdate', location =>
+          handleLocationUpdate({...location, time: Date.now()}),
+        );
+      }
     }
   }, [deviceId]);
 
