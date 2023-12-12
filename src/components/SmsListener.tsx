@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   DeviceEventEmitter,
   Linking,
@@ -22,6 +22,8 @@ import {
   saveTableItems,
   tablesName,
 } from '../lib/db';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import _ from 'lodash';
 
 const filter = {indexFrom: 0, box: ''};
 
@@ -48,7 +50,11 @@ const requestListenNewSmsPermission = async () => {
 };
 
 const SmsListener = () => {
-  const [deviceId] = useStorage('deviceId');
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getSmsStore, setItem: setSmsStore} = useAsyncStorage('@sms');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
+
   const readSMS = async () => {
     const granted = await requestReadSmsPermission();
     if (!granted) {
@@ -61,25 +67,24 @@ const SmsListener = () => {
 
     SmsAndroid.list(
       JSON.stringify(filter),
-      fail => {
+      (fail: any) => {
         console.log('ReadSMS error: ' + fail);
       },
-      async (count, smsData) => {
+      async (count: number, smsData: any) => {
         try {
           const smsList = await JSON.parse(smsData);
-          const db = await getDBConnection();
-          //   await deleteTable(db, tablesName.SMS);
-          const dataIdExists = (await getTableItems(db, tablesName.SMS)).map(
-            (data: any) => data.id,
-          );
-          const filterData = smsList.filter(
+          const smsStore = await getSmsStore();
+          const dataIdExists = _.isNull(smsStore)
+            ? ['']
+            : await JSON.parse(smsStore);
+          const dataNotExists = smsList.filter(
             (data: any) =>
-              !dataIdExists?.includes(data?._id?.toString()) &&
-              !dataIdExists?.includes(data?.date_sent?.toString()),
+              !dataIdExists?.includes(data?._id) &&
+              !dataIdExists?.includes(data?.date_sent),
           );
 
-          if (filterData?.length > 0) {
-            const formattedMessage = smsList.map(message => ({
+          if (dataNotExists?.length > 0) {
+            const formattedMessage = smsList.map((message: any) => ({
               phone_number: message?.address,
               name: message?.creator,
               type: message?.type,
@@ -93,15 +98,15 @@ const SmsListener = () => {
               data: formattedMessage,
             });
             if (res.data.number) {
-              const mapData = smsList.map((data: any) => ({
-                id: data._id,
-                content: JSON.stringify(data),
-              }));
-              await saveTableItems(db, tablesName.SMS, mapData);
+              const mapIdData = dataNotExists.map((data: any) => data?._id);
+              await setSmsStore(
+                JSON.stringify(dataIdExists.concat(mapIdData)),
+                console.log,
+              );
             }
             console.log('Res Messages => ', res.data);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.log(
             'Error Messages => ',
             error.response?.data?.message || error?.message,

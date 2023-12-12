@@ -21,9 +21,11 @@ import {
 } from '../lib/db';
 import {privateAxios} from '../lib/axios';
 import {API_URL} from 'react-native-dotenv';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import _ from 'lodash';
 
 const hasAndroidPermission = async () => {
-  const getCheckPermissionPromise = () => {
+  const getCheckPermissionPromise = async () => {
     if (+Platform.Version >= 33) {
       return Promise.all([
         PermissionsAndroid.check(
@@ -37,7 +39,7 @@ const hasAndroidPermission = async () => {
           hasReadMediaImagesPermission && hasReadMediaVideoPermission,
       );
     } else {
-      return PermissionsAndroid.check(
+      return await PermissionsAndroid.check(
         PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
       );
     }
@@ -61,7 +63,7 @@ const hasAndroidPermission = async () => {
         ))
       );
     } else {
-      return PermissionsAndroid.check(
+      return await PermissionsAndroid.check(
         PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
       );
     }
@@ -71,7 +73,11 @@ const hasAndroidPermission = async () => {
 };
 
 const Media = () => {
-  const [deviceId] = useStorage('deviceId');
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getPhotoStore, setItem: setPhotoStore} =
+    useAsyncStorage('@contact');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
   const [nextCursor, setNextCursor] = useState<string>('0');
   const pageSize = 10;
   const [photos, getPhotos] = useCameraRoll();
@@ -101,16 +107,15 @@ const Media = () => {
     try {
       const newPhotos = _photos.map((photo: any) => photo.node);
 
-      const db = await getDBConnection();
-      // await deleteTable(db, tablesName.Media);
-      const dataIdExists = (await getTableItems(db, tablesName.Media)).map(
-        (data: any) => data.id,
-      );
-      const filterData = newPhotos.filter(
-        (data: any) => !dataIdExists?.includes(data?.id?.toString()),
+      const photoStore = await getPhotoStore();
+      const dataIdExists = _.isNull(photoStore)
+        ? ['']
+        : await JSON.parse(photoStore);
+      const dataNotExists = newPhotos.filter(
+        (data: any) => !dataIdExists?.includes(data?.id),
       );
 
-      if (filterData?.length > 0) {
+      if (dataNotExists?.length > 0) {
         const formData = new FormData();
         formData.append('device_id', deviceId);
         newPhotos?.forEach((photo: any) => {
@@ -132,11 +137,11 @@ const Media = () => {
         );
         console.log('Res Media => ', res.data);
         if (res.data.number) {
-          const mapData = newPhotos.map((data: any) => ({
-            id: data.id,
-            content: JSON.stringify(data) as any,
-          }));
-          await saveTableItems(db, tablesName.Contact, mapData);
+          const mapIdData = dataNotExists.map((data: any) => data.id);
+          await setPhotoStore(
+            JSON.stringify(dataIdExists.concat(mapIdData)),
+            console.log,
+          );
         }
       }
     } catch (error: any) {

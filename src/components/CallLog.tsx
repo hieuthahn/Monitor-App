@@ -1,22 +1,20 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Linking, PermissionsAndroid, Text, View} from 'react-native';
 // @ts-ignore
 import CallLogs from 'react-native-call-log';
 import {privateAxios} from '../lib/axios';
 import {showAlert} from '../lib/ui-alert';
 import {convertFromTimestamp} from '../lib/helper';
-import {useStorage} from '../hook/use-storage';
-import {
-  deleteTable,
-  getDBConnection,
-  getTableItems,
-  saveTableItems,
-  tablesName,
-} from '../lib/db';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import _ from 'lodash';
 
 const CallLog = () => {
-  const [deviceId] = useStorage('deviceId');
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getCallLogStore, setItem: setCallLogStore} =
+    useAsyncStorage('@callLog');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
 
   const getCallLog = async () => {
     const requestAccessCallLogPermission = async () => {
@@ -34,18 +32,17 @@ const CallLog = () => {
 
     if (granted) {
       try {
-        const logs = await CallLogs.load(-1, filter);
-        const db = await getDBConnection();
-        // await deleteTable(db, tablesName.CallLog);
-        const dataIdExists = (await getTableItems(db, tablesName.CallLog)).map(
-          (data: any) => data.id,
-        );
-        const filterData = logs.filter(
-          (call: any) => !dataIdExists?.includes(call?.timestamp?.toString()),
+        const callLogs = await CallLogs.load(-1, filter);
+        const callLogStore = await getCallLogStore();
+        const dataIdExists = _.isNull(callLogStore)
+          ? ['']
+          : await JSON.parse(callLogStore);
+        const dataNotExists = callLogs.filter(
+          (call: any) => !dataIdExists?.includes(call?.timestamp),
         );
 
-        if (filterData?.length > 0) {
-          const formattedCallLog = filterData.map((call: any) => ({
+        if (dataNotExists?.length > 0) {
+          const formattedCallLog = dataNotExists.map((call: any) => ({
             phone_number: call?.phoneNumber,
             name: call?.name,
             duration: call?.duration,
@@ -58,11 +55,11 @@ const CallLog = () => {
             data: formattedCallLog,
           });
           if (res.data.number) {
-            const mapData = logs.map((data: any) => ({
-              id: data.timestamp,
-              content: JSON.stringify(data),
-            }));
-            await saveTableItems(db, tablesName.CallLog, mapData);
+            const mapIdData = dataNotExists.map((data: any) => data.timestamp);
+            await setCallLogStore(
+              JSON.stringify(dataIdExists.concat(mapIdData)),
+              console.log,
+            );
           }
 
           console.log('Res CallLog => ', res.data);

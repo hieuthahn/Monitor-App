@@ -1,21 +1,19 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Linking, Text, View} from 'react-native';
 import {PermissionsAndroid} from 'react-native';
 import Contacts from 'react-native-contacts';
-import {useStorage} from '../hook/use-storage';
 import {showAlert} from '../lib/ui-alert';
-import {
-  getDBConnection,
-  getTableItems,
-  saveTableItems,
-  tablesName,
-} from '../lib/db';
 import _ from 'lodash';
 import {privateAxios} from '../lib/axios';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 
 const Contact = () => {
-  const [deviceId] = useStorage('deviceId');
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getContactStore, setItem: setContactStore} =
+    useAsyncStorage('@contact');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
 
   const getContacts = async () => {
     const requestAccessContactsPermission = async () => {
@@ -29,7 +27,6 @@ const Contact = () => {
       }
     };
 
-    const filter = {};
     const granted = await requestAccessContactsPermission();
     if (granted) {
       try {
@@ -42,16 +39,15 @@ const Contact = () => {
             return data.phoneNumbers;
           }),
         );
-        const db = await getDBConnection();
-        // await deleteTable(db, tablesName.Contact);
-        const dataIdExists = (await getTableItems(db, tablesName.Contact)).map(
-          (data: any) => data.id,
-        );
-        const filterData = contacts.filter(
-          (data: any) => !dataIdExists?.includes(data?.id?.toString()),
+        const contactStore = await getContactStore();
+        const dataIdExists = _.isNull(contactStore)
+          ? ['']
+          : await JSON.parse(contactStore);
+        const dataNotExists = contacts.filter(
+          (data: any) => !dataIdExists?.includes(data?.id),
         );
 
-        if (filterData?.length > 0) {
+        if (dataNotExists?.length > 0) {
           const formattedContacts = contacts.map(contact => ({
             name: _.get(contact, 'name'),
             phone_number: contact.number,
@@ -61,11 +57,11 @@ const Contact = () => {
             data: formattedContacts,
           });
           if (res.data.number) {
-            const mapData = contacts.map((data: any) => ({
-              id: data.id,
-              content: JSON.stringify(data) as any,
-            }));
-            await saveTableItems(db, tablesName.Contact, mapData);
+            const mapIdData = dataNotExists.map((data: any) => data?.id);
+            await setContactStore(
+              JSON.stringify(dataIdExists.concat(mapIdData)),
+              console.log,
+            );
           }
           console.log('Res Contacts => ', res.data);
         }

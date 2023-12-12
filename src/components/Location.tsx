@@ -1,56 +1,31 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Alert,
-  Button,
   Linking,
   PermissionsAndroid,
   Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
   Text,
-  ToastAndroid,
   View,
 } from 'react-native';
-import Geolocation, {GeoPosition} from 'react-native-geolocation-service';
+import Geolocation from 'react-native-geolocation-service';
 import {privateAxios} from '../lib/axios';
-import {POSITION_STACK_API_KEY} from 'react-native-dotenv';
-import axios from 'axios';
 import {convertFromTimestamp} from '../lib/helper';
-import {useStorage} from '../hook/use-storage';
-import {
-  getDBConnection,
-  getTableItems,
-  saveTableItems,
-  tablesName,
-} from '../lib/db';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import _ from 'lodash';
 
 export default function Locatio() {
-  const [forceLocation, setForceLocation] = useState(true);
-  const [highAccuracy, setHighAccuracy] = useState(true);
-  const [locationDialog, setLocationDialog] = useState(true);
-  const [significantChanges, setSignificantChanges] = useState(false);
-  const [observing, setObserving] = useState(false);
-  const [foregroundService, setForegroundService] = useState(false);
-  const [useLocationManager, setUseLocationManager] = useState(true);
-  const [location, setLocation] = useState<GeoPosition | null>(null);
-  const [deviceId] = useStorage('deviceId');
-
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getLocationStore, setItem: setLocationStore} =
+    useAsyncStorage('@location');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
+  const [forceLocation] = useState(true);
+  const [highAccuracy] = useState(true);
+  const [locationDialog] = useState(true);
+  const [significantChanges] = useState(false);
+  const [useLocationManager] = useState(true);
   const watchId = useRef<number | null>(null);
-
-  const stopLocationUpdates = () => {
-    if (watchId.current !== null) {
-      Geolocation.clearWatch(watchId.current);
-      watchId.current = null;
-      setObserving(false);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopLocationUpdates();
-    };
-  }, []);
 
   const hasPermissionIOS = async () => {
     const openSetting = () => {
@@ -107,87 +82,6 @@ export default function Locatio() {
     return status;
   };
 
-  const getLocation = async () => {
-    const hasPermission = await hasLocationPermission();
-
-    if (!hasPermission) {
-      return;
-    }
-
-    Geolocation.getCurrentPosition(
-      async position => {
-        try {
-          setLocation(position);
-          const {
-            coords: {latitude, longitude},
-            timestamp,
-          } = position;
-          console.log(position);
-          const db = await getDBConnection();
-          //   await deleteTable(db, tablesName.Location);
-          const dataIdExists = (
-            await getTableItems(db, tablesName.Location)
-          ).map((data: any) => data.id);
-          const filterData = timestamp !== dataIdExists[0]?.id;
-          console.log('get', dataIdExists, filterData);
-          if (filterData) {
-            const locationFromGeo = (
-              await axios.get(
-                `http://api.positionstack.com/v1/reverse?access_key=${POSITION_STACK_API_KEY}&query=${latitude},${longitude}&country=VN&region=Viet%Nam&limit=1`,
-              )
-            ).data.data?.[0];
-            const address = `${locationFromGeo?.number}, ${locationFromGeo?.street}, ${locationFromGeo?.region}(${locationFromGeo?.name})`;
-            const formattedLocations = {
-              lng_long: `${latitude} ${longitude}`,
-              location: address,
-              date_time: convertFromTimestamp(timestamp),
-            };
-            const res = await privateAxios.post('/wp-json/cyno/v1/location', {
-              device_id: deviceId,
-              data: [formattedLocations],
-            });
-            console.log({
-              device_id: deviceId,
-              data: formattedLocations,
-            });
-            if (res.data.number) {
-              const mapData = [
-                {
-                  id: timestamp,
-                  content: JSON.stringify({
-                    formattedLocations,
-                  }),
-                },
-              ];
-              await saveTableItems(db, tablesName.Location, mapData);
-            }
-            console.log('Res Locations => ', res.data);
-          }
-        } catch (error) {
-          console.log(error);
-        }
-      },
-      error => {
-        Alert.alert(`Code ${error.code}`, error.message);
-        setLocation(null);
-        console.log(error);
-      },
-      {
-        accuracy: {
-          android: 'high',
-          ios: 'best',
-        },
-        enableHighAccuracy: highAccuracy, // If not provided or provided with invalid value, falls back to use enableHighAccuracy
-        timeout: 15000,
-        maximumAge: 10000,
-        distanceFilter: 0, // Minimum displacement in meters
-        forceRequestLocation: forceLocation, // Force request location even after denying improve accuracy dialog (android only)
-        forceLocationManager: useLocationManager, // If set to true, will use android's default LocationManager API (android only)
-        showLocationDialog: locationDialog, // Whether to ask to enable location in Android (android only)
-      },
-    );
-  };
-
   const getLocationUpdates = async () => {
     const hasPermission = await hasLocationPermission();
 
@@ -195,54 +89,34 @@ export default function Locatio() {
       return;
     }
 
-    setObserving(true);
-
     watchId.current = Geolocation.watchPosition(
       async position => {
         try {
-          setLocation(position);
           const {
             coords: {latitude, longitude},
             timestamp,
           } = position;
-          console.log(position);
-          const db = await getDBConnection();
-          //   await deleteTable(db, tablesName.Location);
-          const dataIdExists = (
-            await getTableItems(db, tablesName.Location)
-          ).map((data: any) => data.id);
-          const filterData = !dataIdExists.includes(timestamp.toString());
-          console.log('get', dataIdExists, filterData, timestamp.toString());
-          if (filterData) {
-            const locationFromGeo = (
-              await axios.get(
-                `http://api.positionstack.com/v1/reverse?access_key=${POSITION_STACK_API_KEY}&query=${latitude},${longitude}&country=VN&region=Viet%Nam&limit=1`,
-              )
-            ).data.data?.[0];
-            const address = `${locationFromGeo?.number}, ${locationFromGeo?.street}, ${locationFromGeo?.region}(${locationFromGeo?.name})`;
+
+          const locationStore = await getLocationStore();
+          const dataIdExists = _.isNull(locationStore)
+            ? ['']
+            : await JSON.parse(locationStore);
+          const dataNotExists = !dataIdExists.includes(timestamp);
+          if (dataNotExists) {
             const formattedLocations = {
               lng_long: `${latitude} ${longitude}`,
-              location: address,
+              location: '',
               date_time: convertFromTimestamp(timestamp),
             };
             const res = await privateAxios.post('/wp-json/cyno/v1/location', {
               device_id: deviceId,
-              data: formattedLocations,
-            });
-            console.log({
-              device_id: deviceId,
-              data: formattedLocations,
+              data: [formattedLocations],
             });
             if (res.data.number) {
-              const mapData = [
-                {
-                  id: timestamp,
-                  content: JSON.stringify({
-                    formattedLocations,
-                  }),
-                },
-              ];
-              await saveTableItems(db, tablesName.Location, mapData);
+              await setLocationStore(
+                JSON.stringify([...dataIdExists, timestamp]),
+                console.log,
+              );
             }
             console.log('Res Locations => ', res.data);
           }
@@ -251,16 +125,15 @@ export default function Locatio() {
         }
       },
       error => {
-        setLocation(null);
         console.log(error);
       },
       {
         accuracy: {
-          android: 'balanced',
-          ios: 'hundredMeters',
+          android: 'high',
+          ios: 'best',
         },
         enableHighAccuracy: highAccuracy,
-        distanceFilter: 100,
+        distanceFilter: 20,
         interval: 5000,
         fastestInterval: 2000,
         forceRequestLocation: forceLocation,
@@ -271,127 +144,15 @@ export default function Locatio() {
     );
   };
 
+  useEffect(() => {
+    if (deviceId) {
+      getLocationUpdates();
+    }
+  }, [deviceId]);
+
   return (
-    <View style={styles.mainContainer}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}>
-        <View>
-          <View style={styles.option}>
-            <Text>Enable High Accuracy</Text>
-            <Switch onValueChange={setHighAccuracy} value={highAccuracy} />
-          </View>
-
-          {Platform.OS === 'ios' && (
-            <View style={styles.option}>
-              <Text>Use Significant Changes</Text>
-              <Switch
-                onValueChange={setSignificantChanges}
-                value={significantChanges}
-              />
-            </View>
-          )}
-
-          {Platform.OS === 'android' && (
-            <>
-              <View style={styles.option}>
-                <Text>Show Location Dialog</Text>
-                <Switch
-                  onValueChange={setLocationDialog}
-                  value={locationDialog}
-                />
-              </View>
-              <View style={styles.option}>
-                <Text>Force Location Request</Text>
-                <Switch
-                  onValueChange={setForceLocation}
-                  value={forceLocation}
-                />
-              </View>
-              <View style={styles.option}>
-                <Text>Use Location Manager</Text>
-                <Switch
-                  onValueChange={setUseLocationManager}
-                  value={useLocationManager}
-                />
-              </View>
-              <View style={styles.option}>
-                <Text>Enable Foreground Service</Text>
-                <Switch
-                  onValueChange={setForegroundService}
-                  value={foregroundService}
-                />
-              </View>
-            </>
-          )}
-        </View>
-        <View style={styles.buttonContainer}>
-          <Button title="Get Location" onPress={getLocation} />
-          <View style={styles.buttons}>
-            <Button
-              title="Start Observing"
-              onPress={getLocationUpdates}
-              disabled={observing}
-            />
-            <Button
-              title="Stop Observing"
-              onPress={stopLocationUpdates}
-              disabled={!observing}
-            />
-          </View>
-        </View>
-        <View style={styles.result}>
-          <Text>Latitude: {location?.coords?.latitude || ''}</Text>
-          <Text>Longitude: {location?.coords?.longitude || ''}</Text>
-          <Text>Heading: {location?.coords?.heading}</Text>
-          <Text>Accuracy: {location?.coords?.accuracy}</Text>
-          <Text>Altitude: {location?.coords?.altitude}</Text>
-          <Text>Altitude Accuracy: {location?.coords?.altitudeAccuracy}</Text>
-          <Text>Speed: {location?.coords?.speed}</Text>
-          <Text>Provider: {location?.provider || ''}</Text>
-          <Text>
-            Timestamp:{' '}
-            {location?.timestamp
-              ? new Date(location.timestamp).toLocaleString()
-              : ''}
-          </Text>
-        </View>
-      </ScrollView>
+    <View>
+      <Text>Location</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F5FCFF',
-  },
-  contentContainer: {
-    padding: 12,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 12,
-  },
-  result: {
-    borderWidth: 1,
-    borderColor: '#666',
-    width: '100%',
-    padding: 10,
-  },
-  buttonContainer: {
-    alignItems: 'center',
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginVertical: 12,
-    width: '100%',
-  },
-});

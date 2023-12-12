@@ -8,6 +8,7 @@ import {initDatabase} from '../../lib/db';
 import {useNavigation} from '@react-navigation/native';
 import {useStorage} from '../../hook/use-storage';
 import {getToken} from '../../lib/helper';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 
 const Authentication = () => {
   const [auth, setAuth] = useState<{
@@ -17,24 +18,22 @@ const Authentication = () => {
     crime_id: '106',
     device_man: 'sadmin' || 'client_test',
   });
-  const [token, setToken] = useStorage('token');
-  const [deviceId, setDeviceId] = useStorage('deviceId');
+  const [token, setToken] = useState<string | null | undefined>(null);
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getTokenStore, setItem: setTokenStore} =
+    useAsyncStorage('@token');
+  const {getItem: getDeviceIdStore, setItem: setDeviceIdStore} =
+    useAsyncStorage('@deviceId');
+  getTokenStore((_err, result) => setToken(result));
+  getDeviceIdStore((_err, result) => setDeviceId(result));
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
 
-  const initSQLite = async () => {
-    try {
-      await initDatabase();
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const initToken = async () => {
-    const token = await getToken();
-    if (token) {
-      privateAxios.defaults.headers.common.Authorization = 'Bearer ' + token;
-      setToken(token);
+    const _token = (await getToken()) as string;
+    if (_token) {
+      privateAxios.defaults.headers.common.Authorization = 'Bearer ' + _token;
+      setTokenStore(_token);
     }
   };
 
@@ -43,10 +42,6 @@ const Authentication = () => {
       initToken();
     }
   }, [token]);
-
-  useEffect(() => {
-    initSQLite();
-  }, []);
 
   const handleSubmit = async () => {
     try {
@@ -58,7 +53,7 @@ const Authentication = () => {
       };
       const res = await privateAxios.post('/wp-json/cyno/v1/add_device', body);
       if (res?.data?.device_id) {
-        setDeviceId(res?.data?.device_id);
+        await setDeviceIdStore(res?.data?.device_id?.toString());
         navigation.navigate('Permission' as never);
       }
     } catch (error: any) {

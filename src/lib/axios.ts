@@ -5,6 +5,8 @@ import axios, {AxiosError} from 'axios';
 import storage from './storage';
 import {getToken} from './helper';
 import {showAlert} from './ui-alert';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import _ from 'lodash';
 
 const codeTokenIsExpired = 'jwt_auth_invalid_token';
 
@@ -14,8 +16,7 @@ export const privateAxios = axios.create({
 
 privateAxios.interceptors.request.use(async config => {
   try {
-    const token = await storage.load({key: 'token'});
-
+    const token = await AsyncStorage.getItem('@token');
     if (token) {
       config.headers.Authorization = 'Bearer ' + token;
     }
@@ -33,8 +34,8 @@ privateAxios.interceptors.response.use(
   async (error: AxiosError) => {
     try {
       const status = error.response?.status;
-      const code = error.response?.data?.code || '';
-      if (status === 403 && code === codeTokenIsExpired) {
+      const code = _.get(error.response?.data, 'code') || '';
+      if (status === 403 && `${code}` === codeTokenIsExpired) {
         const token = await getToken();
         if (error.config?.headers && token) {
           error.config.headers.Authorization = 'Bearer ' + token;

