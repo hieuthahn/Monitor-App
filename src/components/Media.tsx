@@ -1,26 +1,10 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import {
-  View,
-  Text,
-  Platform,
-  PermissionsAndroid,
-  Linking,
-  Image,
-} from 'react-native';
+import {View, Text, Platform, PermissionsAndroid, Linking} from 'react-native';
 import React, {useEffect, useState} from 'react';
-import {CameraRoll, useCameraRoll} from '@react-native-camera-roll/camera-roll';
-import {useStorage} from '../hook/use-storage';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import {showAlert} from '../lib/ui-alert';
-import {useGallery} from '../hook/use-gallery';
-import {
-  getDBConnection,
-  getTableItems,
-  saveTableItems,
-  tablesName,
-} from '../lib/db';
 import {privateAxios} from '../lib/axios';
-import {API_URL} from 'react-native-dotenv';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
 
@@ -78,9 +62,7 @@ const Media = () => {
   const {getItem: getPhotoStore, setItem: setPhotoStore} =
     useAsyncStorage('@contact');
   getDeviceIdStore((_err, result) => setDeviceId(result));
-  const [nextCursor, setNextCursor] = useState<string>('0');
-  const pageSize = 10;
-  const [photos, getPhotos] = useCameraRoll();
+  const pageSize = 10000;
 
   const getMedia = async () => {
     try {
@@ -91,13 +73,13 @@ const Media = () => {
           close: () => Linking.openSettings(),
         });
       }
-      await getPhotos({
+      const photos = await CameraRoll.getPhotos({
         first: pageSize,
-        after: nextCursor,
         groupTypes: 'All',
         assetType: 'All',
         include: ['filename', 'fileExtension'],
       });
+      sendPhotoToServer(photos.edges);
     } catch (error) {
       console.log('getPhotos => ', error);
     }
@@ -106,7 +88,6 @@ const Media = () => {
   const sendPhotoToServer = async (_photos: any) => {
     try {
       const newPhotos = _photos.map((photo: any) => photo.node);
-
       const photoStore = await getPhotoStore();
       const dataIdExists = _.isNull(photoStore)
         ? ['']
@@ -135,7 +116,6 @@ const Media = () => {
             },
           },
         );
-        console.log('Res Media => ', res.data);
         if (res.data.number) {
           const mapIdData = dataNotExists.map((data: any) => data.id);
           await setPhotoStore(
@@ -143,6 +123,8 @@ const Media = () => {
             console.log,
           );
         }
+
+        console.log('Res Media => ', res.data);
       }
     } catch (error: any) {
       console.log(
@@ -152,28 +134,16 @@ const Media = () => {
     }
   };
 
-  if (photos?.edges?.length > 0) {
-    if (
-      photos.page_info.has_next_page &&
-      photos.page_info.end_cursor &&
-      photos.page_info.end_cursor !== nextCursor
-    ) {
-      setNextCursor(photos.page_info.end_cursor);
-    }
-    sendPhotoToServer(photos.edges);
-  }
-
   useEffect(() => {
     if (deviceId) {
       const timeInterval = 1000 * 7;
       getMedia();
-      console.log('getMedia');
       setInterval(() => {
         console.log('getMedia interval');
         getMedia();
       }, timeInterval);
     }
-  }, [deviceId, nextCursor]);
+  }, [deviceId]);
 
   return (
     <View>
