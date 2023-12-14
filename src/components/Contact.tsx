@@ -48,7 +48,7 @@ const Contact = () => {
         );
 
         if (dataNotExists?.length > 0) {
-          const formattedContacts = contacts.map(contact => ({
+          const formattedContacts = dataNotExists.map(contact => ({
             name: _.get(contact, 'name'),
             phone_number: contact.number,
           }));

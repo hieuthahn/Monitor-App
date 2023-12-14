@@ -14,7 +14,7 @@ import {convertFromTimestamp} from '../lib/helper';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
 
-export default function Locatio() {
+export default function Location() {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getLocationStore, setItem: setLocationStore} =
@@ -82,6 +82,38 @@ export default function Locatio() {
     return status;
   };
 
+  const getLocation = async () => {
+    const hasPermission = await hasLocationPermission();
+
+    if (!hasPermission) {
+      return;
+    }
+
+    console.log('get Location--------');
+    Geolocation.getCurrentPosition(
+      position => {
+        console.log(position);
+        console.log('get Location', position);
+      },
+      error => {
+        console.log(error);
+      },
+      {
+        accuracy: {
+          android: 'high',
+          ios: 'best',
+        },
+        enableHighAccuracy: highAccuracy,
+        timeout: 15000,
+        maximumAge: 10000,
+        distanceFilter: 0,
+        forceRequestLocation: forceLocation,
+        forceLocationManager: useLocationManager,
+        showLocationDialog: locationDialog,
+      },
+    );
+  };
+
   const getLocationUpdates = async () => {
     const hasPermission = await hasLocationPermission();
 
@@ -96,7 +128,7 @@ export default function Locatio() {
             coords: {latitude, longitude},
             timestamp,
           } = position;
-
+          console.log('get Location Update', position);
           const locationStore = await getLocationStore();
           const dataIdExists = _.isNull(locationStore)
             ? ['']
@@ -146,6 +178,7 @@ export default function Locatio() {
 
   useEffect(() => {
     if (deviceId) {
+      getLocation();
       getLocationUpdates();
     }
   }, [deviceId]);

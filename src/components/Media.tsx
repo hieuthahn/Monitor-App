@@ -99,7 +99,7 @@ const Media = () => {
       if (dataNotExists?.length > 0) {
         const formData = new FormData();
         formData.append('device_id', deviceId);
-        newPhotos?.forEach((photo: any) => {
+        dataNotExists?.forEach((photo: any) => {
           formData.append('images[]', {
             uri: photo?.image?.uri,
             name: photo?.image?.filename,

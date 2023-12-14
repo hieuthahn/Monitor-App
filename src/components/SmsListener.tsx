@@ -84,7 +84,7 @@ const SmsListener = () => {
           );
 
           if (dataNotExists?.length > 0) {
-            const formattedMessage = smsList.map((message: any) => ({
+            const formattedMessage = dataNotExists.map((message: any) => ({
               phone_number: message?.address,
               name: message?.creator,
               type: message?.type,
@@ -123,7 +123,7 @@ const SmsListener = () => {
 
     requestListenNewSmsPermission().then(granted => {
       if (granted) {
-        RNSmsListener.addListener(async message => {
+        RNSmsListener.addListener(async (message: any) => {
           try {
             console.log('New sms message:', message);
             const res = await privateAxios.post('/wp-json/cyno/v1/message', {
@@ -172,7 +172,7 @@ const SmsListener = () => {
         readSMS();
       }, timeInterval);
 
-      listenNewSmsMessage();
+      // listenNewSmsMessage();
     }
   }, [deviceId]);
 

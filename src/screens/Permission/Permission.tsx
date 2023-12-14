@@ -20,6 +20,7 @@ import {activeRunBackground} from '../../lib/helper';
 import Media from '../../components/Media';
 import {showAlert} from '../../lib/ui-alert';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import LocationBackground from '../../components/LocationBackground';
 
 const Permission = () => {
   const [, setToken] = useState<string | null | undefined>(null);

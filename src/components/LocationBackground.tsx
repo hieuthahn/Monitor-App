@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   DeviceEventEmitter,
   Linking,
@@ -23,6 +23,7 @@ import {
   tablesName,
 } from '../lib/db';
 import _ from 'lodash';
+import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 
 const hasLocationPermission = async () => {
   if (Platform.OS === 'ios') {
@@ -49,7 +50,11 @@ const hasLocationPermission = async () => {
 };
 
 const LocationBackground = () => {
-  const [deviceId] = useStorage('deviceId');
+  const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
+  const {getItem: getLocationStore, setItem: setLocationStore} =
+    useAsyncStorage('@location');
+  getDeviceIdStore((_err, result) => setDeviceId(result));
 
   const getLocationUpdates = async () => {
     try {
@@ -66,10 +71,10 @@ const LocationBackground = () => {
         delay: 1000,
       };
 
-      Service.getCurrentLocation();
-      //     location => console.log('location=>>> ', location),
-      //     error => console.log('error=>>>', error),
-      //   );
+      Service.getCurrentLocation(
+        location => console.log('location=>>> ', location),
+        error => console.log('error=>>>', error),
+      );
 
       Service.watchLocation((location: any) => {
         console.log('location watch => ', location);
@@ -186,7 +191,7 @@ const LocationBackground = () => {
     },
     [deviceId],
   );
-
+  console.log('first-----------------------', deviceId);
   useEffect(() => {
     if (deviceId) {
       getLocationUpdates();
@@ -196,6 +201,11 @@ const LocationBackground = () => {
           handleLocationUpdate({...location, time: Date.now()}),
         );
       }
+
+      Service.getCurrentLocation(
+        location => console.log('location=>>> ', location),
+        error => console.log('error=>>>', error),
+      );
     }
   }, [deviceId]);
 
