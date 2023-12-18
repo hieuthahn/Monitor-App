@@ -1,8 +1,18 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import {View, Text, Platform, PermissionsAndroid, Linking} from 'react-native';
+import {
+  View,
+  Text,
+  Platform,
+  PermissionsAndroid,
+  Linking,
+  ActivityIndicator,
+} from 'react-native';
 import React, {useEffect, useState} from 'react';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import {
+  CameraRoll,
+  PhotoIdentifier,
+} from '@react-native-camera-roll/camera-roll';
 import {showAlert} from '../lib/ui-alert';
 import {privateAxios} from '../lib/axios';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
@@ -60,9 +70,12 @@ const Media = () => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getPhotoStore, setItem: setPhotoStore} =
-    useAsyncStorage('@contact');
+    useAsyncStorage('@media');
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const pageSize = 10000;
+  const [isUploading, setIsUploading] = useState(true);
+  const [counter, setCounter] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const getMedia = async () => {
     try {
@@ -79,34 +92,40 @@ const Media = () => {
         assetType: 'All',
         include: ['filename', 'fileExtension'],
       });
-      sendPhotoToServer(photos.edges);
+
+      let promises: Promise<any>[] = [];
+      if (!_.isEmpty(photos.edges)) {
+        photos.edges.forEach((photo: PhotoIdentifier) => {
+          promises.push(sendPhotoToServer(photo.node));
+        });
+        setTotal(photos.edges.length);
+      }
+      setIsUploading(true);
+      await Promise.all(promises);
+      setIsUploading(false);
     } catch (error) {
+      setIsUploading(false);
       console.log('getPhotos => ', error);
     }
   };
 
-  const sendPhotoToServer = async (_photos: any) => {
+  const sendPhotoToServer = async (photo: any) => {
     try {
-      const newPhotos = _photos.map((photo: any) => photo.node);
-      const photoStore = await getPhotoStore();
-      const dataIdExists = _.isNull(photoStore)
-        ? ['']
+      let photoStore = await getPhotoStore();
+      let dataIdExists = _.isNull(photoStore)
+        ? []
         : await JSON.parse(photoStore);
-      const dataNotExists = newPhotos.filter(
-        (data: any) => !dataIdExists?.includes(data?.id),
-      );
+      const photoNotUploaded = !dataIdExists?.includes(photo?.id) ? photo : [];
 
-      if (dataNotExists?.length > 0) {
+      setCounter(dataIdExists.length);
+      if (!_.isEmpty(photoNotUploaded)) {
         const formData = new FormData();
         formData.append('device_id', deviceId);
-        dataNotExists?.forEach((photo: any) => {
-          formData.append('images[]', {
-            uri: photo?.image?.uri,
-            name: photo?.image?.filename,
-            type: photo?.type,
-          });
+        formData.append('images[]', {
+          uri: photoNotUploaded?.image?.uri,
+          name: photoNotUploaded?.image?.filename,
+          type: photoNotUploaded?.type,
         });
-
         const res = await privateAxios.post(
           '/wp-json/cyno/v1/add_media',
           formData,
@@ -117,14 +136,20 @@ const Media = () => {
           },
         );
         if (res.data.number) {
-          const mapIdData = dataNotExists.map((data: any) => data.id);
+          const mapIdData = [photoNotUploaded?.id];
+          photoStore = await getPhotoStore();
+          dataIdExists = _.isNull(photoStore)
+            ? []
+            : await JSON.parse(photoStore);
+
+          setCounter(dataIdExists.length);
           await setPhotoStore(
             JSON.stringify(dataIdExists.concat(mapIdData)),
             console.log,
           );
         }
 
-        console.log('Res Media => ', res.data);
+        // console.log('Media Uploaded++');
       }
     } catch (error: any) {
       console.log(
@@ -136,18 +161,22 @@ const Media = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 7;
+      const timeInterval = 1000 * 60 * 2;
       getMedia();
       setInterval(() => {
-        console.log('getMedia interval');
-        getMedia();
+        if (!isUploading) {
+          // console.log('getMedia interval');
+          getMedia();
+        }
       }, timeInterval);
     }
   }, [deviceId]);
 
   return (
-    <View>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
       <Text>Media</Text>
+      <Text>{`${counter}/${total}`}</Text>
+      <ActivityIndicator size={13} animating={isUploading} />
     </View>
   );
 };

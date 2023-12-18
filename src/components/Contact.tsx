@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
 import {Linking, Text, View} from 'react-native';
@@ -14,6 +15,8 @@ const Contact = () => {
   const {getItem: getContactStore, setItem: setContactStore} =
     useAsyncStorage('@contact');
   getDeviceIdStore((_err, result) => setDeviceId(result));
+  const [counter, setCounter] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const getContacts = async () => {
     const requestAccessContactsPermission = async () => {
@@ -39,14 +42,16 @@ const Contact = () => {
             return data.phoneNumbers;
           }),
         );
-        const contactStore = await getContactStore();
-        const dataIdExists = _.isNull(contactStore)
-          ? ['']
+        let contactStore = await getContactStore();
+        let dataIdExists = _.isNull(contactStore)
+          ? []
           : await JSON.parse(contactStore);
+
         const dataNotExists = contacts.filter(
           (data: any) => !dataIdExists?.includes(data?.id),
         );
-
+        setTotal(contacts.length);
+        setCounter(dataIdExists.length);
         if (dataNotExists?.length > 0) {
           const formattedContacts = dataNotExists.map(contact => ({
             name: _.get(contact, 'name'),
@@ -58,6 +63,11 @@ const Contact = () => {
           });
           if (res.data.number) {
             const mapIdData = dataNotExists.map((data: any) => data?.id);
+            contactStore = await getContactStore();
+            dataIdExists = _.isNull(contactStore)
+              ? []
+              : await JSON.parse(contactStore);
+            setCounter(dataIdExists.length);
             await setContactStore(
               JSON.stringify(dataIdExists.concat(mapIdData)),
               console.log,
@@ -81,19 +91,20 @@ const Contact = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 6;
+      const timeInterval = 1000 * 30;
       getContacts();
       console.log('getContacts');
       setInterval(() => {
-        console.log('getContacts interval');
+        // console.log('getContacts interval');
         getContacts();
       }, timeInterval);
     }
   }, [deviceId]);
 
   return (
-    <View>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
       <Text>Contact</Text>
+      <Text>{`${counter}/${total}`}</Text>
     </View>
   );
 };

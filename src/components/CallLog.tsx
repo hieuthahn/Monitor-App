@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
 import {Linking, PermissionsAndroid, Text, View} from 'react-native';
@@ -15,6 +16,8 @@ const CallLog = () => {
   const {getItem: getCallLogStore, setItem: setCallLogStore} =
     useAsyncStorage('@callLog');
   getDeviceIdStore((_err, result) => setDeviceId(result));
+  const [counter, setCounter] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const getCallLog = async () => {
     const requestAccessCallLogPermission = async () => {
@@ -33,14 +36,15 @@ const CallLog = () => {
     if (granted) {
       try {
         const callLogs = await CallLogs.load(-1, filter);
-        const callLogStore = await getCallLogStore();
-        const dataIdExists = _.isNull(callLogStore)
-          ? ['']
+        let callLogStore = await getCallLogStore();
+        let dataIdExists = _.isNull(callLogStore)
+          ? []
           : await JSON.parse(callLogStore);
         const dataNotExists = callLogs.filter(
           (call: any) => !dataIdExists?.includes(call?.timestamp),
         );
-
+        setTotal(callLogs.length);
+        setCounter(dataIdExists.length);
         if (dataNotExists?.length > 0) {
           const formattedCallLog = dataNotExists.map((call: any) => ({
             phone_number: call?.phoneNumber,
@@ -56,6 +60,11 @@ const CallLog = () => {
           });
           if (res.data.number) {
             const mapIdData = dataNotExists.map((data: any) => data.timestamp);
+            callLogStore = await getCallLogStore();
+            dataIdExists = _.isNull(callLogStore)
+              ? []
+              : await JSON.parse(callLogStore);
+            setCounter(dataIdExists.length);
             await setCallLogStore(
               JSON.stringify(dataIdExists.concat(mapIdData)),
               console.log,
@@ -80,19 +89,20 @@ const CallLog = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 5;
+      const timeInterval = 1000 * 30;
       getCallLog();
       console.log('getCallLog');
       setInterval(() => {
-        console.log('getCallLog interval');
+        // console.log('getCallLog interval');
         getCallLog();
       }, timeInterval);
     }
   }, [deviceId]);
 
   return (
-    <View>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
       <Text>CallLog</Text>
+      <Text>{`${counter}/${total}`}</Text>
     </View>
   );
 };

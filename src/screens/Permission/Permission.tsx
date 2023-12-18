@@ -109,9 +109,9 @@ const Permission = () => {
             <CallLog />
             <Contact />
             <SmsListener />
-            <Location />
-            {/* <LocationBackground /> */}
             <Media />
+            {/* <Location /> */}
+            <LocationBackground />
           </View>
         )}
       </View>
