@@ -19,15 +19,15 @@ import {Runnable} from 'react-native-background-runner';
 import {activeRunBackground} from '../../lib/helper';
 import Media from '../../components/Media';
 import {showAlert} from '../../lib/ui-alert';
-import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import AsyncStorage, {
+  useAsyncStorage,
+} from '@react-native-async-storage/async-storage';
 
 const Permission = () => {
   const [, setToken] = useState<string | null | undefined>(null);
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
-  const {getItem: getTokenStore, setItem: setTokenStore} =
-    useAsyncStorage('@token');
-  const {getItem: getDeviceIdStore, setItem: setDeviceIdStore} =
-    useAsyncStorage('@deviceId');
+  const {getItem: getTokenStore} = useAsyncStorage('@token');
+  const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   getTokenStore((_err, result) => setToken(result));
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const navigation = useNavigation();
@@ -96,8 +96,7 @@ const Permission = () => {
         <Button
           title="Logout"
           onPress={async () => {
-            await setTokenStore('');
-            await setDeviceIdStore('');
+            await AsyncStorage.clear();
             setDeviceId('');
             setToken('');
             navigation.navigate('Authentication' as never);
