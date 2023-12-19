@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Alert,
   Linking,
@@ -23,6 +23,7 @@ export default function Location() {
     removeItem,
   } = useAsyncStorage('@location');
   getDeviceIdStore((_err, result) => setDeviceId(result));
+  const intervalRef = useRef<any>(0);
 
   const hasPermissionIOS = async () => {
     const openSetting = () => {
@@ -113,7 +114,10 @@ export default function Location() {
           locationStore = locationStore.filter(
             (item: any) => Number(item?.timestamp) >= threeDayBeforeTimestamp,
           );
-          locationStore.push({formattedLocation, timestamp});
+          locationStore = _.uniqWith(
+            locationStore.push({formattedLocation, timestamp}),
+            _.isEqual,
+          );
           await setLocationStore(JSON.stringify(locationStore), console.log);
         }
       },
@@ -161,13 +165,19 @@ export default function Location() {
 
   useEffect(() => {
     if (deviceId) {
-      const interval = 1000 * 60 * 2;
+      const interval = 1000 * 30;
       getLocationUpdates();
       sendLocationMissed();
-      setInterval(() => {
+      intervalRef.current = setInterval(() => {
         sendLocationMissed();
       }, interval);
+    } else {
+      clearInterval(intervalRef.current);
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, [deviceId]);
 
   return (

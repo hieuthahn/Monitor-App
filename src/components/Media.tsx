@@ -8,7 +8,7 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   CameraRoll,
   PhotoIdentifier,
@@ -76,6 +76,7 @@ const Media = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [counter, setCounter] = useState(0);
   const [total, setTotal] = useState(0);
+  const intervalRef = useRef<any>(0);
 
   const getMedia = async () => {
     try {
@@ -116,8 +117,8 @@ const Media = () => {
         ? []
         : await JSON.parse(photoStore);
       const photoNotUploaded = !dataIdExists?.includes(photo?.id) ? photo : [];
-
       setCounter(dataIdExists.length);
+
       if (!_.isEmpty(photoNotUploaded)) {
         const formData = new FormData();
         formData.append('device_id', deviceId);
@@ -136,15 +137,14 @@ const Media = () => {
           },
         );
         if (res.data.number) {
-          const mapIdData = [photoNotUploaded?.id];
           photoStore = await getPhotoStore();
           dataIdExists = _.isNull(photoStore)
             ? []
             : await JSON.parse(photoStore);
-
+          dataIdExists.push(photoNotUploaded?.id);
           setCounter(dataIdExists.length);
           await setPhotoStore(
-            JSON.stringify(dataIdExists.concat(mapIdData)),
+            JSON.stringify(_.uniq(dataIdExists)),
             console.log,
           );
         }
@@ -161,15 +161,20 @@ const Media = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 60 * 2;
+      const timeInterval = 1000 * 30;
       getMedia();
-      setInterval(() => {
+      intervalRef.current = setInterval(() => {
         if (!isUploading) {
-          // console.log('getMedia interval');
           getMedia();
         }
       }, timeInterval);
+    } else {
+      clearInterval(intervalRef.current);
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, [deviceId]);
 
   return (

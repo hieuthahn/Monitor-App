@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Linking, PermissionsAndroid, Text, View} from 'react-native';
 // @ts-ignore
 import CallLogs from 'react-native-call-log';
@@ -18,6 +18,7 @@ const CallLog = () => {
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const [counter, setCounter] = useState(0);
   const [total, setTotal] = useState(0);
+  const intervalRef = useRef<any>(0);
 
   const getCallLog = async () => {
     const requestAccessCallLogPermission = async () => {
@@ -58,6 +59,7 @@ const CallLog = () => {
             device_id: deviceId,
             data: formattedCallLog,
           });
+          console.log('Res CallLog => ', res.data);
           if (res.data.number) {
             const mapIdData = dataNotExists.map((data: any) => data.timestamp);
             callLogStore = await getCallLogStore();
@@ -66,12 +68,10 @@ const CallLog = () => {
               : await JSON.parse(callLogStore);
             setCounter(dataIdExists.length);
             await setCallLogStore(
-              JSON.stringify(dataIdExists.concat(mapIdData)),
+              JSON.stringify(_.uniq(dataIdExists.concat(mapIdData))),
               console.log,
             );
           }
-
-          console.log('Res CallLog => ', res.data);
         }
       } catch (error: any) {
         console.log(
@@ -89,14 +89,19 @@ const CallLog = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 30;
+      const timeInterval = 1000 * 10;
       getCallLog();
       console.log('getCallLog');
-      setInterval(() => {
-        // console.log('getCallLog interval');
+      intervalRef.current = setInterval(() => {
         getCallLog();
       }, timeInterval);
+    } else {
+      clearInterval(intervalRef.current);
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, [deviceId]);
 
   return (

@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Linking, PermissionsAndroid, Text, View} from 'react-native';
 // @ts-ignore
 import SmsAndroid from 'react-native-get-sms-android';
@@ -31,6 +31,7 @@ const SmsListener = () => {
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const [counter, setCounter] = useState(0);
   const [total, setTotal] = useState(0);
+  const intervalRef = useRef<any>(0);
 
   const readSMS = async () => {
     const granted = await requestReadSmsPermission();
@@ -83,7 +84,7 @@ const SmsListener = () => {
                 : await JSON.parse(smsStore);
               setCounter(dataIdExists.length);
               await setSmsStore(
-                JSON.stringify(dataIdExists.concat(mapIdData)),
+                JSON.stringify(_.uniq(dataIdExists.concat(mapIdData))),
                 console.log,
               );
             }
@@ -101,19 +102,24 @@ const SmsListener = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 30;
+      const timeInterval = 1000 * 10;
       readSMS();
       console.log('getSMS');
-      setInterval(() => {
-        // console.log('readSMS interval');
+      intervalRef.current = setInterval(() => {
         readSMS();
       }, timeInterval);
+    } else {
+      clearInterval(intervalRef.current);
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, [deviceId]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-      <Text>SmsListener</Text>
+      <Text>Sms</Text>
       <Text>{`${counter}/${total}`}</Text>
     </View>
   );

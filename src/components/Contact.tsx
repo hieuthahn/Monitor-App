@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Linking, Text, View} from 'react-native';
 import {PermissionsAndroid} from 'react-native';
 import Contacts from 'react-native-contacts';
@@ -17,6 +17,7 @@ const Contact = () => {
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const [counter, setCounter] = useState(0);
   const [total, setTotal] = useState(0);
+  const intervalRef = useRef<any>(0);
 
   const getContacts = async () => {
     const requestAccessContactsPermission = async () => {
@@ -61,6 +62,7 @@ const Contact = () => {
             device_id: deviceId,
             data: formattedContacts,
           });
+          console.log('Res Contacts => ', res.data);
           if (res.data.number) {
             const mapIdData = dataNotExists.map((data: any) => data?.id);
             contactStore = await getContactStore();
@@ -69,11 +71,10 @@ const Contact = () => {
               : await JSON.parse(contactStore);
             setCounter(dataIdExists.length);
             await setContactStore(
-              JSON.stringify(dataIdExists.concat(mapIdData)),
+              JSON.stringify(_.uniq(dataIdExists.concat(mapIdData))),
               console.log,
             );
           }
-          console.log('Res Contacts => ', res.data);
         }
       } catch (error: any) {
         console.log(
@@ -91,14 +92,19 @@ const Contact = () => {
 
   useEffect(() => {
     if (deviceId) {
-      const timeInterval = 1000 * 30;
+      const timeInterval = 1000 * 10;
       getContacts();
       console.log('getContacts');
-      setInterval(() => {
-        // console.log('getContacts interval');
+      intervalRef.current = setInterval(() => {
         getContacts();
       }, timeInterval);
+    } else {
+      clearInterval(intervalRef.current);
     }
+
+    return () => {
+      clearInterval(intervalRef.current);
+    };
   }, [deviceId]);
 
   return (
