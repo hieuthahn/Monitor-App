@@ -103,7 +103,7 @@ const SmsListener = () => {
     if (deviceId) {
       const timeInterval = 1000 * 30;
       readSMS();
-      console.log('readSMS');
+      console.log('getSMS');
       setInterval(() => {
         // console.log('readSMS interval');
         readSMS();

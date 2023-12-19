@@ -73,7 +73,7 @@ const Media = () => {
     useAsyncStorage('@media');
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const pageSize = 10000;
-  const [isUploading, setIsUploading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [counter, setCounter] = useState(0);
   const [total, setTotal] = useState(0);
 
@@ -149,7 +149,7 @@ const Media = () => {
           );
         }
 
-        // console.log('Media Uploaded++');
+        console.log('Media Uploaded++');
       }
     } catch (error: any) {
       console.log(

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Alert,
   Linking,
@@ -17,15 +17,12 @@ import _ from 'lodash';
 export default function Location() {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
-  const {getItem: getLocationStore, setItem: setLocationStore} =
-    useAsyncStorage('@location');
+  const {
+    getItem: getLocationStore,
+    setItem: setLocationStore,
+    removeItem,
+  } = useAsyncStorage('@location');
   getDeviceIdStore((_err, result) => setDeviceId(result));
-  const [forceLocation] = useState(true);
-  const [highAccuracy] = useState(true);
-  const [locationDialog] = useState(true);
-  const [significantChanges] = useState(false);
-  const [useLocationManager] = useState(true);
-  const watchId = useRef<number | null>(null);
 
   const hasPermissionIOS = async () => {
     const openSetting = () => {
@@ -82,78 +79,42 @@ export default function Location() {
     return status;
   };
 
-  const getLocation = async () => {
-    const hasPermission = await hasLocationPermission();
-
-    if (!hasPermission) {
-      return;
-    }
-
-    console.log('get Location--------');
-    Geolocation.getCurrentPosition(
-      position => {
-        console.log(position);
-        console.log('get Location', position);
-      },
-      error => {
-        console.log(error);
-      },
-      {
-        accuracy: {
-          android: 'high',
-          ios: 'best',
-        },
-        enableHighAccuracy: highAccuracy,
-        timeout: 15000,
-        maximumAge: 10000,
-        distanceFilter: 0,
-        forceRequestLocation: forceLocation,
-        forceLocationManager: useLocationManager,
-        showLocationDialog: locationDialog,
-      },
-    );
-  };
-
   const getLocationUpdates = async () => {
     const hasPermission = await hasLocationPermission();
-
     if (!hasPermission) {
       return;
     }
 
-    watchId.current = Geolocation.watchPosition(
+    Geolocation.watchPosition(
       async position => {
+        const {
+          coords: {latitude, longitude},
+          timestamp,
+        } = position;
+        const formattedLocation = {
+          lng_long: `${latitude} ${longitude}`,
+          location: '',
+          date_time: convertFromTimestamp(timestamp),
+        };
         try {
-          const {
-            coords: {latitude, longitude},
-            timestamp,
-          } = position;
-          console.log('get Location Update', position);
-          const locationStore = await getLocationStore();
-          const dataIdExists = _.isNull(locationStore)
-            ? ['']
-            : await JSON.parse(locationStore);
-          const dataNotExists = !dataIdExists.includes(timestamp);
-          if (dataNotExists) {
-            const formattedLocations = {
-              lng_long: `${latitude} ${longitude}`,
-              location: '',
-              date_time: convertFromTimestamp(timestamp),
-            };
-            const res = await privateAxios.post('/wp-json/cyno/v1/location', {
-              device_id: deviceId,
-              data: [formattedLocations],
-            });
-            if (res.data.number) {
-              await setLocationStore(
-                JSON.stringify([...dataIdExists, timestamp]),
-                console.log,
-              );
-            }
-            console.log('Res Locations => ', res.data);
-          }
-        } catch (error) {
-          console.log(error);
+          const res = await privateAxios.post('/wp-json/cyno/v1/location', {
+            device_id: deviceId,
+            data: [formattedLocation],
+          });
+          console.log('Res Location Updates => ', res.data);
+        } catch (error: any) {
+          console.log(
+            'Error Location =>',
+            error?.response?.data?.message || error?.message,
+          );
+          const store = await getLocationStore();
+          let locationStore = _.isNull(store) ? [] : await JSON.parse(store);
+          const threeDayBeforeTimestamp = Date.now() - 1000 * 60 * 60 * 24 + 2;
+          locationStore = locationStore.filter(
+            (item: any) => Number(item?.timestamp) >= threeDayBeforeTimestamp,
+          );
+          locationStore.push({formattedLocation, timestamp});
+          await setLocationStore(JSON.stringify(locationStore), console.log);
         }
       },
       error => {
@@ -164,22 +125,48 @@ export default function Location() {
           android: 'high',
           ios: 'best',
         },
-        enableHighAccuracy: highAccuracy,
-        distanceFilter: 20,
-        interval: 5000,
-        fastestInterval: 2000,
-        forceRequestLocation: forceLocation,
-        forceLocationManager: useLocationManager,
-        showLocationDialog: locationDialog,
-        useSignificantChanges: significantChanges,
+        enableHighAccuracy: true,
+        distanceFilter: 30,
+        interval: 10000,
+        fastestInterval: 5000,
+        forceRequestLocation: true,
+        forceLocationManager: false,
+        showLocationDialog: true,
+        showsBackgroundLocationIndicator: false,
       },
     );
   };
 
+  const sendLocationMissed = async () => {
+    try {
+      const store = await getLocationStore();
+      let locationStore = _.isNull(store) ? [] : await JSON.parse(store);
+      const formattedLocations = locationStore?.map(
+        (item: any) => item?.formattedLocation,
+      );
+      const res = await privateAxios.post('/wp-json/cyno/v1/location', {
+        device_id: deviceId,
+        data: formattedLocations,
+      });
+      if (res.data?.number) {
+        await removeItem();
+      }
+    } catch (error: any) {
+      console.log(
+        'Error sendLocationMissed =>',
+        error?.response?.data?.message || error?.message,
+      );
+    }
+  };
+
   useEffect(() => {
     if (deviceId) {
-      getLocation();
+      const interval = 1000 * 60 * 2;
       getLocationUpdates();
+      sendLocationMissed();
+      setInterval(() => {
+        sendLocationMissed();
+      }, interval);
     }
   }, [deviceId]);
 

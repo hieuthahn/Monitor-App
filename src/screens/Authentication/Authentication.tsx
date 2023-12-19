@@ -4,9 +4,7 @@ import React, {useEffect, useState} from 'react';
 import {Alert, Button, Text, TextInput, View} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import {privateAxios} from '../../lib/axios';
-import {initDatabase} from '../../lib/db';
 import {useNavigation} from '@react-navigation/native';
-import {useStorage} from '../../hook/use-storage';
 import {getToken} from '../../lib/helper';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 
