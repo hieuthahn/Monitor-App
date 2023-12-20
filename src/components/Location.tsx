@@ -174,10 +174,6 @@ export default function Location() {
     } else {
       clearInterval(intervalRef.current);
     }
-
-    return () => {
-      clearInterval(intervalRef.current);
-    };
   }, [deviceId]);
 
   return (

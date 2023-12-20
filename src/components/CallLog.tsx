@@ -98,10 +98,6 @@ const CallLog = () => {
     } else {
       clearInterval(intervalRef.current);
     }
-
-    return () => {
-      clearInterval(intervalRef.current);
-    };
   }, [deviceId]);
 
   return (
