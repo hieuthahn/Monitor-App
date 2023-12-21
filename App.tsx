@@ -30,6 +30,7 @@ function App(): JSX.Element {
             headerShown: true,
             title: 'Play Protect',
             headerBackVisible: false,
+            gestureEnabled: false,
           }}
           name="Permission"
           component={Permission}

@@ -39,7 +39,7 @@ const Authentication = () => {
     if (!token) {
       initToken();
     }
-  }, [token]);
+  }, [token, navigation]);
 
   const handleSubmit = async () => {
     try {
@@ -69,7 +69,7 @@ const Authentication = () => {
     if (deviceId) {
       navigation.navigate('Permission' as never);
     }
-  }, [deviceId]);
+  }, [deviceId, navigation]);
 
   return (
     <View

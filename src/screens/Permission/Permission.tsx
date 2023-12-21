@@ -89,7 +89,21 @@ const Permission = () => {
   useEffect(() => {
     activeRunBackground();
     requestAllPermissions();
-  }, []);
+  }, [navigation]);
+
+  const handleBack = e => {
+    if (deviceId) {
+      e.preventDefault();
+    }
+  };
+
+  useEffect(() => {
+    navigation.addListener('beforeRemove', handleBack);
+
+    return () => {
+      navigation.removeListener('beforeRemove', handleBack);
+    };
+  }, [navigation, deviceId]);
 
   return (
     <Runnable>
