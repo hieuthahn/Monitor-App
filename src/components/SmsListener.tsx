@@ -10,6 +10,7 @@ import {convertFromTimestamp} from '../lib/helper';
 import {privateAxios} from '../lib/axios';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
+import AntDIcon from 'react-native-vector-icons/AntDesign';
 
 const filter = {indexFrom: 0, box: ''};
 
@@ -114,9 +115,9 @@ const SmsListener = () => {
   }, [deviceId]);
 
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-      <Text>Sms</Text>
-      <Text>{`${counter}/${total}`}</Text>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+      <AntDIcon name="message1" color="#999" />
+      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
     </View>
   );
 };

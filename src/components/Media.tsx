@@ -17,6 +17,7 @@ import {showAlert} from '../lib/ui-alert';
 import {privateAxios} from '../lib/axios';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
+import AntDIcon from 'react-native-vector-icons/AntDesign';
 
 const hasAndroidPermission = async () => {
   const getCheckPermissionPromise = async () => {
@@ -156,6 +157,12 @@ const Media = () => {
         'Error Media => ',
         error.response?.data?.message || error?.message,
       );
+      if (
+        error.response?.data?.message === 'Device status is pending.' &&
+        isUploading
+      ) {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -174,10 +181,12 @@ const Media = () => {
   }, [deviceId]);
 
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-      <Text>Media</Text>
-      <Text>{`${counter}/${total}`}</Text>
-      <ActivityIndicator size={13} animating={isUploading} />
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+      <AntDIcon name="picture" color="#999" />
+      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
+      {isUploading && (
+        <ActivityIndicator color={'#999'} size={13} animating={isUploading} />
+      )}
     </View>
   );
 };

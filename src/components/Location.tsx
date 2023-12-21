@@ -13,6 +13,7 @@ import {privateAxios} from '../lib/axios';
 import {convertFromTimestamp} from '../lib/helper';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
+import IonIcon from 'react-native-vector-icons/Ionicons';
 
 export default function Location() {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
@@ -178,7 +179,7 @@ export default function Location() {
 
   return (
     <View>
-      <Text>Location</Text>
+      <IonIcon name="location-outline" color="#999" />
     </View>
   );
 }

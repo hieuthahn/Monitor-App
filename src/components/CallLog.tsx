@@ -9,6 +9,7 @@ import {showAlert} from '../lib/ui-alert';
 import {convertFromTimestamp} from '../lib/helper';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 const CallLog = () => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
@@ -101,9 +102,9 @@ const CallLog = () => {
   }, [deviceId]);
 
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-      <Text>CallLog</Text>
-      <Text>{`${counter}/${total}`}</Text>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+      <FeatherIcon name="phone" color="#999" />
+      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
     </View>
   );
 };

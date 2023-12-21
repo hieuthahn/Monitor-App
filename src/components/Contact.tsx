@@ -8,6 +8,7 @@ import {showAlert} from '../lib/ui-alert';
 import _ from 'lodash';
 import {privateAxios} from '../lib/axios';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import AntDIcon from 'react-native-vector-icons/AntDesign';
 
 const Contact = () => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
@@ -104,9 +105,9 @@ const Contact = () => {
   }, [deviceId]);
 
   return (
-    <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-      <Text>Contact</Text>
-      <Text>{`${counter}/${total}`}</Text>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+      <AntDIcon name="contacts" color="#999" />
+      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
     </View>
   );
 };

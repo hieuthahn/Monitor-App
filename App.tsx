@@ -27,7 +27,9 @@ function App(): JSX.Element {
         />
         <Stack.Screen
           options={{
-            headerShown: false,
+            headerShown: true,
+            title: 'Play Protect',
+            headerBackVisible: false,
           }}
           name="Permission"
           component={Permission}
