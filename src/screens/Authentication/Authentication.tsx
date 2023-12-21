@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
-import {Alert, Button, Text, TextInput, View} from 'react-native';
+import {Alert, Button, Image, Text, TextInput, View} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import {privateAxios} from '../../lib/axios';
 import {useNavigation} from '@react-navigation/native';
@@ -13,8 +13,8 @@ const Authentication = () => {
     crime_id: string;
     device_man: string;
   }>({
-    crime_id: '106',
-    device_man: 'sadmin' || 'client_test',
+    crime_id: '', // '106',
+    device_man: '', // 'sadmin' || 'client_test',
   });
   const [token, setToken] = useState<string | null | undefined>(null);
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
@@ -78,14 +78,27 @@ const Authentication = () => {
         justifyContent: 'center',
         padding: 16,
         gap: 16,
+        backgroundColor: 'white',
       }}>
-      <Text style={{textAlign: 'center', fontWeight: '400'}}>
-        Authentication
-      </Text>
+      <View
+        style={{
+          // flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <Image
+          source={require('../../assets/google-account.png')}
+          style={{width: 80, height: 80}}
+        />
+        <Text style={{textAlign: 'center', fontSize: 18, fontWeight: 'bold'}}>
+          {'Google Protection'}
+        </Text>
+      </View>
       <TextInput
         style={{
           borderWidth: 1,
-          padding: 8,
+          paddingVertical: 4,
+          paddingHorizontal: 12,
           borderColor: 'black',
           borderRadius: 12,
         }}
@@ -97,16 +110,19 @@ const Authentication = () => {
       <TextInput
         style={{
           borderWidth: 1,
-          padding: 8,
+          paddingVertical: 4,
+          paddingHorizontal: 12,
           borderColor: 'black',
           borderRadius: 12,
         }}
         value={auth.device_man}
         onChangeText={value => setAuth(prev => ({...prev, device_man: value}))}
         autoCapitalize="none"
-        placeholder="Device man"
+        placeholder="Device"
       />
-      <Button disabled={isLoading} onPress={handleSubmit} title="Submit" />
+      <View style={{overflow: 'hidden', borderRadius: 12}}>
+        <Button disabled={isLoading} onPress={handleSubmit} title="Login" />
+      </View>
     </View>
   );
 };

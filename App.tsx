@@ -5,6 +5,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Authentication from './src/screens/Authentication/Authentication';
 import Permission from './src/screens/Permission/Permission';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import {View} from 'react-native';
 
 const Stack = createNativeStackNavigator();
 

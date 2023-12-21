@@ -107,7 +107,7 @@ const Permission = () => {
 
   return (
     <Runnable>
-      <View style={{flex: 1, gap: 12, padding: 12}}>
+      <View style={{flex: 1, gap: 16, padding: 16, backgroundColor: 'white'}}>
         <View
           style={{
             // justifyContent: 'center',
