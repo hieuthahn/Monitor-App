@@ -5,7 +5,7 @@ export function showAlert(
   {close, closeText = 'Yes'}: {close: () => void; closeText: string},
 ) {
   setTimeout(() => {
-    Alert.alert('Google Protection', msg, [
+    Alert.alert('Google Protect', msg, [
       {
         text: closeText,
         onPress: () => {

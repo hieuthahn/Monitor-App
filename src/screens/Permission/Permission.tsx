@@ -141,7 +141,7 @@ const Permission = () => {
             {'No harmful apps found'}
           </Text>
           <Text
-            style={{marginTop: 14}}>{`Play Protect scanned at ${time}`}</Text>
+            style={{marginTop: 14}}>{`Google Protect scanned at ${time}`}</Text>
         </View>
         <Text
           style={{
@@ -177,7 +177,7 @@ const Permission = () => {
         />
         <Text>
           {
-            "Play Protect regularly checks your apps and device for harmful behavior. You'll be notified of any sercurity risks found."
+            "Google Protect regularly checks your apps and device for harmful behavior. You'll be notified of any sercurity risks found."
           }
         </Text>
         <View style={{flex: 1, marginTop: 'auto', justifyContent: 'flex-end'}}>

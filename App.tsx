@@ -29,7 +29,7 @@ function App(): JSX.Element {
         <Stack.Screen
           options={{
             headerShown: true,
-            title: 'Play Protect',
+            title: 'Google Protect',
             headerBackVisible: false,
             gestureEnabled: false,
           }}

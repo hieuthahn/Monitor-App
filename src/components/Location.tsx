@@ -179,7 +179,7 @@ export default function Location() {
 
   return (
     <View>
-      <IonIcon name="location-outline" color="#999" />
+      <IonIcon name="location-outline" size={14} color="#999" />
     </View>
   );
 }

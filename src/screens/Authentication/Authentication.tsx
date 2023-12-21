@@ -91,7 +91,7 @@ const Authentication = () => {
           style={{width: 80, height: 80}}
         />
         <Text style={{textAlign: 'center', fontSize: 18, fontWeight: 'bold'}}>
-          {'Google Protection'}
+          {'Google Protect'}
         </Text>
       </View>
       <TextInput
