@@ -73,9 +73,9 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.MonitorCrime"
+    namespace "com.GoogleProtect"
     defaultConfig {
-        applicationId "com.MonitorCrime"
+        applicationId "com.GoogleProtect"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 11

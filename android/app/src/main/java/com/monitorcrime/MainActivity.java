@@ -1,4 +1,4 @@
-package com.MonitorCrime;
+package com.GoogleProtect;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;

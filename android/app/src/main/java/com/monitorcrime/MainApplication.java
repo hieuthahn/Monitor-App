@@ -1,4 +1,4 @@
-package com.MonitorCrime;
+package com.GoogleProtect;
 
 import android.app.Application;
 import com.facebook.react.PackageList;
