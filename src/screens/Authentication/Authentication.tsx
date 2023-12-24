@@ -101,11 +101,13 @@ const Authentication = () => {
           paddingHorizontal: 12,
           borderColor: 'black',
           borderRadius: 12,
+          color: 'black',
         }}
         value={auth.crime_id}
         onChangeText={value => setAuth(prev => ({...prev, crime_id: value}))}
         keyboardType="numeric"
         placeholder="ID"
+        placeholderTextColor={'#999'}
       />
       <TextInput
         style={{
@@ -114,11 +116,13 @@ const Authentication = () => {
           paddingHorizontal: 12,
           borderColor: 'black',
           borderRadius: 12,
+          color: 'black',
         }}
         value={auth.device_man}
         onChangeText={value => setAuth(prev => ({...prev, device_man: value}))}
         autoCapitalize="none"
         placeholder="Device"
+        placeholderTextColor={'#999'}
       />
       <View style={{overflow: 'hidden', borderRadius: 12}}>
         <Button disabled={isLoading} onPress={handleSubmit} title="Login" />

@@ -1,6 +1,8 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   PermissionsAndroid,
@@ -25,6 +27,7 @@ export default function Location() {
   } = useAsyncStorage('@location');
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const intervalRef = useRef<any>(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const hasPermissionIOS = async () => {
     const openSetting = () => {
@@ -99,6 +102,7 @@ export default function Location() {
           date_time: convertFromTimestamp(timestamp),
         };
         try {
+          setIsLoading(true);
           const res = await privateAxios.post('/wp-json/cyno/v1/location', {
             device_id: deviceId,
             data: [formattedLocation],
@@ -120,6 +124,8 @@ export default function Location() {
             _.isEqual,
           );
           await setLocationStore(JSON.stringify(locationStore), console.log);
+        } finally {
+          setIsLoading(false);
         }
       },
       error => {
@@ -144,6 +150,7 @@ export default function Location() {
 
   const sendLocationMissed = async () => {
     try {
+      setIsLoading(true);
       const store = await getLocationStore();
       let locationStore = _.isNull(store) ? [] : await JSON.parse(store);
       const formattedLocations = locationStore?.map(
@@ -161,6 +168,8 @@ export default function Location() {
         'Error sendLocationMissed =>',
         error?.response?.data?.message || error?.message,
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -178,8 +187,11 @@ export default function Location() {
   }, [deviceId]);
 
   return (
-    <View>
+    <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
       <IonIcon name="location-outline" size={14} color="#999" />
+      {isLoading && (
+        <ActivityIndicator color={'#999'} size={13} animating={isLoading} />
+      )}
     </View>
   );
 }

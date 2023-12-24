@@ -117,7 +117,8 @@ const SmsListener = () => {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
       <AntDIcon name="message1" color="#999" />
-      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
+      <Text
+        style={{fontSize: 12, color: 'black'}}>{`${counter}/${total}`}</Text>
     </View>
   );
 };

