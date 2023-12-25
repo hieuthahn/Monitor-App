@@ -67,7 +67,7 @@ const hasAndroidPermission = async () => {
   return await getRequestPermissionPromise();
 };
 
-const Media = () => {
+const Media = ({connectionStatus}: {connectionStatus: boolean}) => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getPhotoStore, setItem: setPhotoStore} =
@@ -178,7 +178,7 @@ const Media = () => {
     } else {
       clearInterval(intervalRef.current);
     }
-  }, [deviceId]);
+  }, [deviceId, connectionStatus]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>

@@ -7,7 +7,6 @@ import {
   Linking,
   PermissionsAndroid,
   Platform,
-  Text,
   View,
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
@@ -17,7 +16,11 @@ import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 
-export default function Location() {
+export default function Location({
+  connectionStatus,
+}: {
+  connectionStatus: boolean;
+}) {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {
@@ -115,14 +118,12 @@ export default function Location() {
           );
           const store = await getLocationStore();
           let locationStore = _.isNull(store) ? [] : await JSON.parse(store);
-          const threeDayBeforeTimestamp = Date.now() - 1000 * 60 * 60 * 24 + 2;
+          const twoDayBeforeTimestamp = Date.now() - 1000 * 60 * 60 * 24 + 2;
           locationStore = locationStore.filter(
-            (item: any) => Number(item?.timestamp) >= threeDayBeforeTimestamp,
+            (item: any) => Number(item?.timestamp) >= twoDayBeforeTimestamp,
           );
-          locationStore = _.uniqWith(
-            locationStore.push({formattedLocation, timestamp}),
-            _.isEqual,
-          );
+          locationStore.push({formattedLocation, timestamp});
+          locationStore = _.uniqBy(locationStore, 'timestamp');
           await setLocationStore(JSON.stringify(locationStore), console.log);
         } finally {
           setIsLoading(false);
@@ -184,7 +185,7 @@ export default function Location() {
     } else {
       clearInterval(intervalRef.current);
     }
-  }, [deviceId]);
+  }, [deviceId, connectionStatus]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>

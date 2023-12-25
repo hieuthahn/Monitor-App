@@ -11,7 +11,7 @@ import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import _ from 'lodash';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 
-const CallLog = () => {
+const CallLog = ({connectionStatus}: {connectionStatus: boolean}) => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getCallLogStore, setItem: setCallLogStore} =
@@ -99,7 +99,7 @@ const CallLog = () => {
     } else {
       clearInterval(intervalRef.current);
     }
-  }, [deviceId]);
+  }, [deviceId, connectionStatus]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>

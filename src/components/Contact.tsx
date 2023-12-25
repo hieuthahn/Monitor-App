@@ -10,7 +10,7 @@ import {privateAxios} from '../lib/axios';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
 import AntDIcon from 'react-native-vector-icons/AntDesign';
 
-const Contact = () => {
+const Contact = ({connectionStatus}: {connectionStatus: boolean}) => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getContactStore, setItem: setContactStore} =
@@ -102,7 +102,7 @@ const Contact = () => {
     } else {
       clearInterval(intervalRef.current);
     }
-  }, [deviceId]);
+  }, [deviceId, connectionStatus]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>

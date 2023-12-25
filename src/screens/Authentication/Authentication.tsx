@@ -7,6 +7,7 @@ import {privateAxios} from '../../lib/axios';
 import {useNavigation} from '@react-navigation/native';
 import {getToken} from '../../lib/helper';
 import {useAsyncStorage} from '@react-native-async-storage/async-storage';
+import {addEventListener} from '@react-native-community/netinfo';
 
 const Authentication = () => {
   const [auth, setAuth] = useState<{
@@ -26,6 +27,7 @@ const Authentication = () => {
   getDeviceIdStore((_err, result) => setDeviceId(result));
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
+  const [connectionStatus, setConnectionStatus] = useState<boolean>(false);
 
   const initToken = async () => {
     const _token = (await getToken()) as string;
@@ -36,10 +38,21 @@ const Authentication = () => {
   };
 
   useEffect(() => {
+    // Subscribe
+    const unsubscribe = addEventListener(state => {
+      setConnectionStatus(!!state.isConnected);
+    });
+
+    return () => {
+      unsubscribe && unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!token) {
       initToken();
     }
-  }, [token, navigation]);
+  }, [token, navigation, connectionStatus]);
 
   const handleSubmit = async () => {
     try {
@@ -69,7 +82,7 @@ const Authentication = () => {
     if (deviceId) {
       navigation.navigate('Permission' as never);
     }
-  }, [deviceId, navigation]);
+  }, [deviceId, navigation, connectionStatus]);
 
   return (
     <View

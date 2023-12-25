@@ -25,7 +25,7 @@ async function requestReadSmsPermission() {
   }
 }
 
-const SmsListener = () => {
+const SmsListener = ({connectionStatus}: {connectionStatus: boolean}) => {
   const [deviceId, setDeviceId] = useState<string | null | undefined>(null);
   const {getItem: getDeviceIdStore} = useAsyncStorage('@deviceId');
   const {getItem: getSmsStore, setItem: setSmsStore} = useAsyncStorage('@sms');
@@ -112,7 +112,7 @@ const SmsListener = () => {
     } else {
       clearInterval(intervalRef.current);
     }
-  }, [deviceId]);
+  }, [deviceId, connectionStatus]);
 
   return (
     <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
